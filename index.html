@@ -1,0 +1,32 @@
+<script>
+const startDate = "2022-04-13";
+const endDate = "2022-04-15";
+
+const query = `query MarketPrices {
+	marketPricesElectricity(startDate: "${startDate}", endDate: "${endDate}") {
+    till
+    from
+    marketPrice
+    priceIncludingMarkup
+	}
+	marketPricesGas(startDate: "${startDate}", endDate: "${endDate}") {
+    from
+    till
+    marketPrice
+    priceIncludingMarkup
+  }
+}`;
+
+async function getMarketPrices() {
+  const marketPrices = await fetch(`https://graphcdn.frankenergie.nl`, {
+    method: "POST",
+    body: JSON.stringify({ query: query }),
+    headers: {
+      "content-type":"application/json"
+    }
+  }).then((response) => response.json());
+  console.log(marketPrices);
+}
+
+getMarketPrices();
+</script>

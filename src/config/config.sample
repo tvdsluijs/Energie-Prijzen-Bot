@@ -1,0 +1,8 @@
+// rename this file to config.conf
+// fill in the telegram bot api key
+//
+// remove this and the above lines
+
+[telegram]
+key:
+admin:
