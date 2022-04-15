@@ -109,17 +109,80 @@ class EnergiePrijzen_SQL():
             log.error(e)
             return -1
 
-    def get_prices(self, date:str = None)->dict:
+    def get_prices(self, date:str = None, kind:str = None)->dict:
+        try:
+            self.connection()
+            cur = self.conn.cursor()
+            if kind is None:
+                sql_extra = ""
+            else:
+                sql_extra = f" AND kind = '{kind}'"
+
+            SQL =  f"""SELECT fromdate, fromtime, price, kind
+                      FROM energy
+                      WHERE fromdate = ? {sql_extra};"""
+
+            output_obj = cur.execute(SQL, (date, ))
+            results = output_obj.fetchall()
+            row_as_dict = []
+            for row in results:
+                row_as_dict.append( {output_obj.description[i][0]:row[i] for i in range(len(row))} )
+
+            return row_as_dict
+
+        except sqlite3.IntegrityError:
+            return 0
+        except Exception as e:
+            log.error(e)
+            return -1
+
+    def get_high_prices(self, date:str = None, kind:str = 'e')->dict:
         try:
             self.connection()
             cur = self.conn.cursor()
 
-            SQL =  """SELECT fromdate, fromtime, price, kind
-                      FROM energy
-                      WHERE fromdate = ?;"""
+            SQL =  f"""SELECT fromdate, fromtime, price, kind
+FROM energy
+WHERE fromdate = ?
+AND kind = ?
+AND price = ( SELECT max(price) FROM energy
+WHERE fromdate = ?
+AND kind = ?
+Group by fromdate );"""
 
-            output_obj = cur.execute(SQL, (date, ))
+            output_obj = cur.execute(SQL, (date, kind, date, kind, ))
             results = output_obj.fetchall()
+
+            row_as_dict = []
+            for row in results:
+                row_as_dict.append( {output_obj.description[i][0]:row[i] for i in range(len(row))} )
+
+            return row_as_dict
+
+        except sqlite3.IntegrityError:
+            return 0
+        except Exception as e:
+            log.error(e)
+            return -1
+
+    def get_low_prices(self, date:str = None, kind:str = 'e')->dict:
+        try:
+            self.connection()
+            cur = self.conn.cursor()
+
+            SQL =  f"""SELECT fromdate, fromtime, price, kind
+FROM energy
+WHERE fromdate = ?
+AND kind = ?
+AND price = ( SELECT min(price) FROM energy
+WHERE fromdate = ?
+AND kind = ?
+Group by fromdate );"""
+
+            output_obj = cur.execute(SQL, (date, kind, date, kind, ))
+
+            results = output_obj.fetchall()
+
             row_as_dict = []
             for row in results:
                 row_as_dict.append( {output_obj.description[i][0]:row[i] for i in range(len(row))} )

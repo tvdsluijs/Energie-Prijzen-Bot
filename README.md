@@ -32,6 +32,16 @@ De Token plaats je in `./config/config.conf` een voorbeeld van de config vind je
 ###  Afhankelijkheden
 - Python 3.8 (minimum)
 - Telegram bot
+- Docker
+
+#### Docker extra's
+
+**Lijstje van al je docker containers**
+`docker ps -a`
+
+**List all container id**
+`docker ps -aq`
+
 
 ###  Installeren
 

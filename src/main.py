@@ -6,6 +6,7 @@ import logging.config
 
 from functions.telegram_energieprijzen import Telegram_EnergiePrijzen
 from functions.energieprijzen_sql import EnergiePrijzen_SQL
+from functions.energieprijzen import EnergiePrijzen
 
 os.environ['TZ'] = 'Europe/Amsterdam'
 
@@ -65,6 +66,9 @@ class EnergieBot():
 
 if __name__ == "__main__":
     eb = EnergieBot()
+    # EP = EnergiePrijzen()
+    # EP.set_dates()
+    # EP.get_lowest_price(date=EP.startdate)
 
     esql = EnergiePrijzen_SQL(dbname="energieprijzen.db")
     for table in ['energy', 'user']:

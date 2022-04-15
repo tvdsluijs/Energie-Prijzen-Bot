@@ -35,6 +35,9 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             listids_handler = CommandHandler('listids', self.list_ids)
             u.dispatcher.add_handler(listids_handler)
 
+            start_handler = CommandHandler('start', self.start_me_up)
+            u.dispatcher.add_handler(start_handler)
+
             helpme_handler = CommandHandler('help', self.help_me)
             u.dispatcher.add_handler(helpme_handler)
 

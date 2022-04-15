@@ -1,3 +1,4 @@
+import sys
 from ast import Constant
 import os
 import json
@@ -65,7 +66,7 @@ class EnergiePrijzen():
             self.enddate = self.tomorrow.strftime("%Y-%m-%d")
 
             self.current_hour = self.now.strftime("%H:00")
-            self.current_hour_short = self.now.strftime("%H")
+            self.current_hour_short = int(self.now.strftime("%H"))
             self.next_hour = self.next_hour.strftime("%H:00")
 
         except Exception as e:
@@ -160,13 +161,13 @@ class EnergiePrijzen():
         finally:
             esql.close()
 
-    def get_prices(self, date:str=None)->dict:
+    def get_prices(self, date:str=None, kind:str = None)->dict:
         try:
             if date is None:
                 date = self.now.strftime("%Y-%m-%d")
 
             esql = EnergiePrijzen_SQL(dbname=self.dbname)
-            return esql.get_prices(date=date)
+            return esql.get_prices(date=date, kind=kind)
         except Exception as e:
             log.error(e)
         finally:
@@ -194,7 +195,7 @@ class EnergiePrijzen():
             if data['elect'] is not None:
                 for d in data['elect']:
                     if d['fromtime'] == self.next_hour:
-                        msg += f""" Om {d['fromtime']} zitten we op de bodem! \n ⚡  €. {d['price']} \n"""
+                        msg += f"""Om {d['fromtime']} zitten we op de bodem! \n ⚡  €. {d['price']} \n"""
             if msg != "":
                 return msg
             return False
@@ -223,14 +224,17 @@ class EnergiePrijzen():
             data = self.get_lowest_price(date=date)
             msg = ""
             if data['elect'] is not None:
-                msg += """De bodemprijzen van vandaag voor ⚡ \n"""
+                msg += """Bodemprijzen van vandaag voor ⚡ \n"""
                 for d in data['elect']:
                     msg += f"""{d['fromtime']} -> €. {d['price']}\n"""
 
             if data['gas'] is not None:
-                msg += """\nDe bodemprijzen van vandaag voor 🔥 \n"""
+                msg += """\nBodemprijs van vandaag voor 🔥 \n"""
                 for d in data['gas']:
-                    msg += f"""{d['fromtime']} -> €. {d['price']}\n"""
+                    if d['fromtime'] == '06:00':
+                        msg += f"""vanaf 6 uur -> €. {d['price']}\n"""
+                    elif d['fromtime'] == '05:00':
+                        msg += f"""tot 6 uur -> €. {d['price']}\n"""
             if msg == "":
                 return "Sorry! Er is geen data beschikbaar!"
 
@@ -244,14 +248,17 @@ class EnergiePrijzen():
             data = self.get_highest_price(date=date)
             msg = ""
             if data['elect'] is not None:
-                msg += """De hoogste prijzen van vandaag voor ⚡ \n"""
+                msg += """Hoogste prijzen van vandaag voor ⚡ \n"""
                 for d in data['elect']:
                     msg += f"""{d['fromtime']} €. {d['price']}\n"""
 
             if data['gas'] is not None:
-                msg += """\nDe hoogste prijzen van vandaag voor 🔥 \n"""
+                msg += """\nHoogste prijs van vandaag voor 🔥 \n"""
                 for d in data['gas']:
-                    msg += f"""{d['fromtime']} -> €. {d['price']}\n"""
+                    if d['fromtime'] == '06:00':
+                        msg += f"""vanaf 6 uur -> €. {d['price']}\n"""
+                    elif d['fromtime'] == '05:00':
+                        msg += f"""tot 6 uur -> €. {d['price']}\n"""
             if msg == "":
                 return "Sorry! Er is geen data beschikbaar!"
 
@@ -264,25 +271,11 @@ class EnergiePrijzen():
         try:
             if date is None:
                 date = self.now.strftime("%Y-%m-%d")
-            data = self.get_prices(date);
-            gas = None
-            gas_list = []
-            elect = None
-            elect_list = []
-
-            for v in data:
-                if v['kind'] == 'e':
-                    if elect is None or v['price'] > elect['price']:
-                        elect = v
-                        if elect is not None and v['price'] == elect['price']:
-                            elect_list.append(v)
-                if v['kind'] == 'g':
-                    if gas is None or v['price'] > gas['price']:
-                        gas = v
-                        if gas is not None and v['price'] == gas['price']:
-                            gas_list.append(v)
-
-            return {'elect': elect_list, 'gas': gas_list}
+            esql = EnergiePrijzen_SQL(dbname=self.dbname)
+            gasdata = esql.get_high_prices(date=date, kind='g')
+            electdata = esql.get_high_prices(date=date, kind='e')
+            esql = None
+            return {'gas': gasdata, 'elect': electdata}
         except Exception as e:
             log.error(e)
             return "Great Scott! 🚧  Je hebt een foutje gevonden!"
@@ -291,25 +284,12 @@ class EnergiePrijzen():
         try:
             if date is None:
                 date = self.now.strftime("%Y-%m-%d")
-            data = self.get_prices(date);
-            gas = None
-            gas_list = []
-            elect = None
-            elect_list = []
 
-            for v in data:
-                if v['kind'] == 'e':
-                    if elect is None or v['price'] < elect['price']:
-                        elect = v
-                        if elect is not None and v['price'] == elect['price']:
-                            elect_list.append(v)
-                if v['kind'] == 'g':
-                    if gas is None or v['price'] < gas['price']:
-                        gas = v
-                        if gas is not None and v['price'] == gas['price']:
-                            gas_list.append(v)
-
-            return {'elect': elect_list, 'gas': gas_list}
+            esql = EnergiePrijzen_SQL(dbname=self.dbname)
+            gasdata = esql.get_low_prices(date=date, kind='g')
+            electdata = esql.get_low_prices(date=date, kind='e')
+            esql = None
+            return {'gas': gasdata, 'elect': electdata}
         except Exception as e:
             log.error(e)
             return "Great Scott! 🚧  Je hebt een foutje gevonden!"
@@ -332,7 +312,7 @@ class EnergiePrijzen():
                 if v['kind'] == 'g' and v['fromtime'] == time:
                     gas = v
 
-            return f"""Huidige prijzen ({elect['fromtime']}):
+            return f"""Huidige prijzen ({elect['fromtime']}-{self.next_hour}):
 ⚡ €. {elect['price']}
 🔥 €. {gas['price']}"""
 

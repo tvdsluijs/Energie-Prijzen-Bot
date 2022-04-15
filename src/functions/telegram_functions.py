@@ -20,16 +20,8 @@ class Telegram_Functions(object):
             self.dbname = 'energieprijzen.db'
             self.telegram_key = kwargs['telegram_key']
             self.admin_id = kwargs['admin_id']
-            super().__init__()
-        except KeyError as e:
-            log.error(e)
-        except Exception as e:
-            log.critical(e)
 
-    def help_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            help_text = """Ik ben hier om je te helpen!
-
+            self.help_tekst = """
 Let op! Alle energie bedragen zijn de kale inkoopsprijzen.
 Dus zonder opslag, BTW en belastingen.
 
@@ -55,6 +47,25 @@ Vergeet niet te doneren!!
 Vragen? Mail naar info@itheo.tech
 """
 
+            super().__init__()
+        except KeyError as e:
+            log.error(e)
+        except Exception as e:
+            log.critical(e)
+
+    def start_me_up(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            help_text = """Welkom bij de Energie prijzen bot!\n""" + self.help_tekst
+
+            context.bot.send_message(chat_id=update.message.chat_id, text=help_text)
+        except Exception as e:
+            log.error(e)
+
+
+    def help_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            help_text = """Ik ben hier om je te helpen!\n""" + self.help_tekst
+
             context.bot.send_message(chat_id=update.message.chat_id, text=help_text)
         except Exception as e:
             log.error(e)
@@ -79,24 +90,25 @@ Vragen? Mail naar info@itheo.tech
                 data = EP.get_energyzero_data(kind=sg)
                 EP.save_data(data=data, kind=sg)
 
-            ids = self.get_users()
-            if (msg := EP.get_next_hour_lowest_price()):
-                for id in ids:
-                    if id == 0:
-                        continue
-                    context.bot.send_message(chat_id=id, text=msg)
+            if int(EP.current_hour_short) not in [23,0,1,2,3,4,5,6]:
+                ids = self.get_users()
+                if (msg := EP.get_next_hour_lowest_price()):
+                    for id in ids:
+                        if id == 0:
+                            continue
+                        context.bot.send_message(chat_id=id, text=msg)
 
-            if (msg := EP.get_next_hour_minus_price()):
-                for id in ids:
-                    if id == 0:
-                        continue
-                    context.bot.send_message(chat_id=id, text=msg)
+                if (msg := EP.get_next_hour_minus_price()):
+                    for id in ids:
+                        if id == 0:
+                            continue
+                        context.bot.send_message(chat_id=id, text=msg)
 
-            if (msg := EP.get_tomorrows_minus_price()):
-                for id in ids:
-                    if id == 0:
-                        continue
-                    context.bot.send_message(chat_id=id, text=msg)
+                if (msg := EP.get_tomorrows_minus_price()):
+                    for id in ids:
+                        if id == 0:
+                            continue
+                        context.bot.send_message(chat_id=id, text=msg)
 
             #NOG IETS?
             #Tomorrows prices
