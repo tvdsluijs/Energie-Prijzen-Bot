@@ -69,13 +69,13 @@ if __name__ == "__main__":
     # EP = EnergiePrijzen()
     # EP.set_dates()
     # EP.get_lowest_price(date=EP.startdate)
-
-    esql = EnergiePrijzen_SQL(dbname="energieprijzen.db")
+    dbname = "data/energieprijzen.db"
+    esql = EnergiePrijzen_SQL(dbname=dbname)
     for table in ['energy', 'user']:
         esql.no_table(table=table)
     if eb.admin is not None or eb.admin != "":
         esql.add_user(user_id=eb.admin)
     esql = None
 
-    TE = Telegram_EnergiePrijzen(admin_id=eb.admin,telegram_key=eb.telegram_key)
+    TE = Telegram_EnergiePrijzen(dbname=dbname,admin_id=eb.admin,telegram_key=eb.telegram_key)
     TE.start_telegram()

@@ -17,7 +17,7 @@ class Telegram_Functions(object):
 
     def __init__(self, *args, **kwargs) -> None:
         try:
-            self.dbname = 'energieprijzen.db'
+            self.dbname = kwargs['dbname']
             self.telegram_key = kwargs['telegram_key']
             self.admin_id = kwargs['admin_id']
 
@@ -82,7 +82,7 @@ Vragen? Mail naar info@itheo.tech
             #update prices
             #at 16hour do a send lowest prices overview
             #every hour send a at next hour you will have the lowest prices
-            EP = EnergiePrijzen()
+            EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
 
             #stroom = 1, gas 2 2
@@ -198,7 +198,7 @@ Vragen? Mail naar info@itheo.tech
 
     def get_today(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            EP = EnergiePrijzen()
+            EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             message = EP.get_todays_prices(date=EP.today)
             EP = None
@@ -208,7 +208,7 @@ Vragen? Mail naar info@itheo.tech
 
     def get_tomorrow(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            EP = EnergiePrijzen()
+            EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             if int(EP.current_hour_short) < 15:
                 message = "Sorry, het is nog geen 15uur geweest!"
@@ -221,7 +221,7 @@ Vragen? Mail naar info@itheo.tech
     def fill_db(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             if int(update.message.chat_id) == int(self.admin_id):
-                EP = EnergiePrijzen()
+                EP = EnergiePrijzen(dbname=self.dbname)
                 EP.set_dates()
                 #stroom vanaf 2017
                 EP.get_history(startdate="2017-01-01", enddate="2017-01-02", kind=1)
@@ -236,7 +236,7 @@ Vragen? Mail naar info@itheo.tech
 
     def get_current(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            EP = EnergiePrijzen()
+            EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             message = EP.get_cur_price()
             EP = None
@@ -246,7 +246,7 @@ Vragen? Mail naar info@itheo.tech
 
     def get_highprices(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            EP = EnergiePrijzen()
+            EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             message = EP.get_todays_highest_price()
             EP = None
@@ -256,7 +256,7 @@ Vragen? Mail naar info@itheo.tech
 
     def get_lowprices(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            EP = EnergiePrijzen()
+            EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             message = EP.get_todays_lowest_price()
             EP = None

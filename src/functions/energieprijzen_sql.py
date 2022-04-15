@@ -12,7 +12,10 @@ PY_ENV = os.getenv('PY_ENV', 'dev')
 log = logging.getLogger(PY_ENV)
 
 class EnergiePrijzen_SQL():
-    def __init__(self, dbname:str = 'energieprijzen.db') -> None:
+    def __init__(self, dbname:str = None) -> None:
+        if dbname is None:
+            raise Exception("No dbname in EnergiePrijzen")
+
         self.dbname = dbname
         self.conn = None
         pass

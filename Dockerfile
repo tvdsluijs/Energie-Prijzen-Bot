@@ -12,9 +12,10 @@ LABEL org.opencontainers.image.authors="info@itheo.tech"
 ENV PY_ENV=prod
 
 WORKDIR /src
+VOLUME ["/src/data"]
+# VOLUME /Users/theovandersluijs/MyPythonProjects/Energie-Prijzen-Bot/data/energieprijzen.db:/scr/data/energieprijzen.db
 
 COPY requirements.txt .
-
 COPY ./src .
 
 RUN apk update && apk add python3-dev \

@@ -1,3 +1,4 @@
+from sqlite3 import dbapi2
 import sys
 from ast import Constant
 import os
@@ -19,8 +20,11 @@ class EnergiePrijzen():
     ENERGIE = Constant(1)
     GAS = Constant(2)
 
-    def __init__(self) -> None:
-        self.dbname = 'energieprijzen.db'
+    def __init__(self, dbname:str = None) -> None:
+        if dbname is None:
+            raise Exception("No dbname in EnergiePrijzen")
+
+        self.dbname = dbname
         self.now = None
         self.yesterday = None
         self.tomorrow = None
@@ -358,7 +362,7 @@ class EnergiePrijzen():
     # Jan-Willem van der Wel: Beide
 
 if __name__ == "__main__":
-    EP = EnergiePrijzen()
+    EP = EnergiePrijzen(dbname="")
     EP.set_dates()
     EP.get_lowest_price()
     EP.get_cur_price()

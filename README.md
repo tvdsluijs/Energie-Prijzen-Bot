@@ -42,6 +42,8 @@ De Token plaats je in `./config/config.conf` een voorbeeld van de config vind je
 **List all container id**
 `docker ps -aq`
 
+the path to the data
+`docker volume inspect 6b382a2bf8a0a08d34849e87e1da76c553fcd896e3b271c9d357a37412d35f56`
 
 ###  Installeren
 
