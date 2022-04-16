@@ -228,12 +228,12 @@ class EnergiePrijzen():
             data = self.get_lowest_price(date=date)
             msg = ""
             if data['elect'] is not None:
-                msg += """Bodemprijzen van vandaag voor ⚡ \n"""
+                msg += """Bodemprijzen vandaag voor ⚡ \n"""
                 for d in data['elect']:
                     msg += f"""{d['fromtime']} -> €. {d['price']}\n"""
 
             if data['gas'] is not None:
-                msg += """\nBodemprijs van vandaag voor 🔥 \n"""
+                msg += """\nBodemprijs vandaag voor 🔥 \n"""
                 for d in data['gas']:
                     if d['fromtime'] == '06:00':
                         msg += f"""vanaf 6 uur -> €. {d['price']}\n"""
@@ -252,12 +252,12 @@ class EnergiePrijzen():
             data = self.get_highest_price(date=date)
             msg = ""
             if data['elect'] is not None:
-                msg += """Hoogste prijzen van vandaag voor ⚡ \n"""
+                msg += """Hoogste prijzen vandaag voor ⚡ \n"""
                 for d in data['elect']:
                     msg += f"""{d['fromtime']} €. {d['price']}\n"""
 
             if data['gas'] is not None:
-                msg += """\nHoogste prijs van vandaag voor 🔥 \n"""
+                msg += """\nHoogste prijs vandaag voor 🔥 \n"""
                 for d in data['gas']:
                     if d['fromtime'] == '06:00':
                         msg += f"""vanaf 6 uur -> €. {d['price']}\n"""

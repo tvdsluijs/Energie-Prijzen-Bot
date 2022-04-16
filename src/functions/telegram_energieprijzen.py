@@ -47,9 +47,6 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             current_handler = CommandHandler('nu', self.get_current)
             u.dispatcher.add_handler(current_handler)
 
-            filldb_handler = CommandHandler('fill', self.fill_db)
-            u.dispatcher.add_handler(filldb_handler)
-
             today_handler = CommandHandler('vandaag', self.get_today)
             u.dispatcher.add_handler(today_handler)
 
@@ -64,6 +61,15 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
 
             donate_handler = CommandHandler('doneer', self.donate)
             u.dispatcher.add_handler(donate_handler)
+
+            # admin handlers
+            filldb_handler = CommandHandler('fill', self.fill_db)
+            u.dispatcher.add_handler(filldb_handler)
+
+            system_handler = CommandHandler('system', self.systeminfo)
+            u.dispatcher.add_handler(system_handler)
+
+            # Unknown handlers
 
             unknown_handler = MessageHandler(Filters.command, self.dontunderstand)
             u.dispatcher.add_handler(unknown_handler)

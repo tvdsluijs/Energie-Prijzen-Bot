@@ -39,11 +39,18 @@ De Token plaats je in `./config/config.conf` een voorbeeld van de config vind je
 **Lijstje van al je docker containers**
 `docker ps -a`
 
-**List all container id**
+**Lijstje van alle container ids**
 `docker ps -aq`
 
-the path to the data
-`docker volume inspect 6b382a2bf8a0a08d34849e87e1da76c553fcd896e3b271c9d357a37412d35f56`
+**Vind het pad naar de data**
+`docker volume inspect <dockerid>`
+
+**Data staat in**
+/var/lib/docker/volumes/<dockerid>/_data
+
+**Stop and verwijder container**
+docker stop CONTAINER_ID
+docker rm CONTATINER_ID
 
 ###  Installeren
 
@@ -105,3 +112,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 *  [Github photo by Daniel Reche via Pexels](https://www.pexels.com/@daniel-reche-718241)
 
 *  [Python Telegram Bot]([https://python-telegram-bot.org](https://python-telegram-bot.org/))
+
+*  [dynamische-energieprijzen.nl](https://www.dynamische-energieprijzen.nl/actuele-energieprijzen/)

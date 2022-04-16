@@ -46,6 +46,11 @@ Vergeet niet te doneren!!
 
 Vragen? Mail naar info@itheo.tech
 """
+            self.admin_help = """
+
+            Dit is de Amind help
+            /fill -> to fill the database
+            """
 
             super().__init__()
         except KeyError as e:
@@ -104,14 +109,13 @@ Vragen? Mail naar info@itheo.tech
                             continue
                         context.bot.send_message(chat_id=id, text=msg)
 
-                if (msg := EP.get_tomorrows_minus_price()):
-                    for id in ids:
-                        if id == 0:
-                            continue
-                        context.bot.send_message(chat_id=id, text=msg)
+                if int(EP.current_hour_short) == 15:
+                    if (msg := EP.get_tomorrows_minus_price()):
+                        for id in ids:
+                            if id == 0:
+                                continue
+                            context.bot.send_message(chat_id=id, text=msg)
 
-            #NOG IETS?
-            #Tomorrows prices
             EP = None
         except Exception as e:
             log.error(e)
@@ -218,22 +222,6 @@ Vragen? Mail naar info@itheo.tech
         except Exception as e:
             log.error(e)
 
-    def fill_db(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            if int(update.message.chat_id) == int(self.admin_id):
-                EP = EnergiePrijzen(dbname=self.dbname)
-                EP.set_dates()
-                #stroom vanaf 2017
-                EP.get_history(startdate="2017-01-01", enddate="2017-01-02", kind=1)
-                #gas vanaf 2018
-                EP.get_history(startdate="2018-01-01", enddate="2018-01-02", kind=2)
-                EP = None
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Databases filled!!\n")
-            else:
-                context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I'm not allowed to show you!")
-        except Exception as e:
-            log.error(e)
-
     def get_current(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             EP = EnergiePrijzen(dbname=self.dbname)
@@ -263,3 +251,64 @@ Vragen? Mail naar info@itheo.tech
             context.bot.send_message(chat_id=update.message.chat_id, text=message)
         except Exception as e:
             log.error(e)
+
+    # some admin functions
+    def systeminfo(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            if int(update.message.chat_id) == int(self.admin_id):
+                dbsize = self.fileSize(self.dbname)
+                uptime = os.times()[4]
+                message = f"""
+
+Here's some system info
+
+The current Db size is {dbsize}
+
+The system has been running for {uptime}
+"""
+                context.bot.send_message(chat_id=update.message.chat_id, text=message)
+            else:
+                context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I'm not allowed to show you!")
+        except Exception as e:
+            log.error(e)
+
+    def fill_db(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            if int(update.message.chat_id) == int(self.admin_id):
+                EP = EnergiePrijzen(dbname=self.dbname)
+                EP.set_dates()
+
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"This is gonna take a while!!\n")
+
+                #stroom vanaf 2017
+                EP.get_history(startdate="2017-01-01", enddate="2017-01-02", kind=1)
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"Energy import ready!!\n")
+                #gas vanaf 2018
+                EP.get_history(startdate="2018-01-01", enddate="2018-01-02", kind=2)
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"Gas import ready!!\n")
+                EP = None
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"Databases filled!!\n")
+            else:
+                context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I'm not allowed to show you!")
+        except Exception as e:
+            log.error(e)
+
+# some other functions
+    @staticmethod
+    def unitConvertor(sizeInBytes):
+        #Cinverts the file unit
+        if sizeInBytes < 1024*1024:
+            size = round(sizeInBytes/1024)
+            return f"{size} KB"
+        elif sizeInBytes < 1024*1024*1024:
+            size = round(sizeInBytes/(1024*1024))
+            return f"{size} MB"
+        elif sizeInBytes >= 1024*1024*1024:
+            size = round(sizeInBytes/(1024*1024*1024))
+            return f"{size} GB"
+        else:
+            return f"{sizeInBytes} Bytes"
+
+    def fileSize(self, filePath):
+        size = os.path.getsize(filePath)
+        return self.unitConvertor(size)
