@@ -1,4 +1,3 @@
-
 #  Energie Prijzen Bot
 
 Een Telegram bot die de dagelijkse actuele inkoop energie prijzen verwerkt en toont.
