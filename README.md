@@ -2,7 +2,7 @@
 
 Een Telegram bot die de dagelijkse actuele inkoop energie prijzen verwerkt en toont.
 
-##  Description
+##  Omschrijving
 Een Telegram bot die de dagelijkse actuele inkoop energie prijzen verwerkt en toont die gebruikt worden door Frank Energie, ANWB, EnergieZero, EasyEnergy, Tibber, Nieuwestroom, LeasePlan Energy, MijnDomein Energie.
 
 Blijf up to date met de laagste stroom en gas tarieven.
@@ -14,7 +14,7 @@ Je hoeft zelf dit script niet te draaien als je nu al informatie wilt ontvangen.
 
 ##  Opstarten
 Als je dit script wilt draaien kan dat direct via python
-`python main.py`
+`src/python main.py`
 
 of via de docker file
 `docker build -t energie-prijzen-bot .`
@@ -30,7 +30,7 @@ De Token plaats je in `./config/config.conf` een voorbeeld van de config vind je
 
 ###  Afhankelijkheden
 - Python 3.8 (minimum)
-- Telegram bot
+- Telegram bot key
 - Docker
 
 #### Docker extra's
@@ -69,7 +69,7 @@ Je kan natuurlijk de docker draaien
  `docker build -t energie-prijzen-bot .`
 
 en daarna
-`docker run --rm energie-prijzen-bot`
+`docker run -d energie-prijzen-bot`
 
 Deze doet alles voor je automatisch.
 

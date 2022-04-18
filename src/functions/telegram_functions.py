@@ -260,7 +260,7 @@ Vragen? Mail naar info@itheo.tech
                 uptime = self.secondsToText(seconds)
                 message = f"""
 
-Hier is wat systeem informatie
+Hier is wat systeem informatie:
 
 De bot is versie {version}
 De database is op dit moment  {dbsize}
