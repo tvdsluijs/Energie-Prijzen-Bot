@@ -12,8 +12,7 @@ LABEL org.opencontainers.image.authors="info@itheo.tech"
 ENV PY_ENV=prod
 
 WORKDIR /src
-VOLUME ["/src/data"]
-# VOLUME /Users/theovandersluijs/MyPythonProjects/Energie-Prijzen-Bot/data/energieprijzen.db:/scr/data/energieprijzen.db
+# VOLUME ["src/data"]
 
 COPY requirements.txt .
 COPY ./src .

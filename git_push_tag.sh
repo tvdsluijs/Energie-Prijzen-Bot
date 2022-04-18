@@ -1,23 +1,16 @@
 #!/usr/bin/env bash
 
-dunamai from any --bump --format "{base}" > src/VERSION.TXT
-
 TAG_NAME=$(cat src/VERSION.TXT)
-PUSH_MSG=$2
+PUSH_MSG=$1
 
+echo 'De huidige versie is' ${TAG_NAME}
+echo 'Geef de nieuwe versie op:'
+read nieuwnummer
 
-main(){
-    git pull origin master
-    git add .
-    git commit -m ${PUSH_MSG}
-    git push origin master
-    git tag ${TAG_NAME}
-    git push origin ${TAG_NAME}
-}
+echo 'Nieuwe versie:' ${nieuwnummer}
+echo ${nieuwnummer} > src/VERSION.TXT
+echo 'Versie opgeslagen!'
 
-if [ ! ${TAG_NAME} ]
-then
-    echo 'UAGE: ./git_push.sh <regex:tag_name>'
-else
-    main
-fi
+git add .
+git commit -m ${PUSH_MSG}
+git push
