@@ -1,5 +1,7 @@
 import sys
 import os
+from time import time
+
 import configparser
 import logging
 import logging.config
@@ -65,6 +67,7 @@ class EnergieBot():
 
 
 if __name__ == "__main__":
+    startTime = time()
     eb = EnergieBot()
     # EP = EnergiePrijzen()
     # EP.set_dates()
@@ -76,6 +79,6 @@ if __name__ == "__main__":
     if eb.admin is not None or eb.admin != "":
         esql.add_user(user_id=eb.admin)
     esql = None
-
-    TE = Telegram_EnergiePrijzen(dbname=dbname,admin_id=eb.admin,telegram_key=eb.telegram_key)
+    path = os.path.dirname(os.path.realpath(__file__))
+    TE = Telegram_EnergiePrijzen(dbname=dbname,admin_id=eb.admin,telegram_key=eb.telegram_key, path=path, startTime=startTime)
     TE.start_telegram()

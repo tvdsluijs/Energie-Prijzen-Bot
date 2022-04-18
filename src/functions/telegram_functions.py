@@ -1,7 +1,7 @@
 from ast import Constant
 import os
-import sys
 import telegram
+from time import time
 from telegram.ext import Updater, CommandHandler
 from functions.energieprijzen import EnergiePrijzen
 from functions.energieprijzen_sql import EnergiePrijzen_SQL
@@ -20,6 +20,10 @@ class Telegram_Functions(object):
             self.dbname = kwargs['dbname']
             self.telegram_key = kwargs['telegram_key']
             self.admin_id = kwargs['admin_id']
+            self.path = kwargs['path']
+            self.startTime = kwargs['startTime']
+
+            self.dontunderstand = "Sorry, ik heb je niet begrepen, zocht je naar /hulp ?"
 
             self.help_tekst = """
 Let op! Alle energie bedragen zijn de kale inkoopsprijzen.
@@ -49,7 +53,10 @@ Vragen? Mail naar info@itheo.tech
             self.admin_help = """
 
             Dit is de Amind help
-            /fill -> to fill the database
+            /fill -> vul de database met historische data
+            /onderhoud aan -> stuur iedereen een onderhoud bericht
+            /onderhoud uit -> stuur iedereen een onderhoud bericht
+            /system -> wat systeem informatie
             """
 
             super().__init__()
@@ -131,16 +138,6 @@ Vragen? Mail naar info@itheo.tech
         except Exception as e:
             log.error(e)
 
-    def list_ids(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            if int(update.message.chat_id) == int(self.admin_id):
-                ids = self.get_users()
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Here's the list of ids you requested!\n {str(ids)}")
-            else:
-                context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I'm not allowed to show you!")
-        except Exception as e:
-            log.error(e)
-
     def blahblah(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             msg = "Sorry, ik werk alleen met commando's, zoek je /hulp ?"
@@ -151,7 +148,7 @@ Vragen? Mail naar info@itheo.tech
     def dontunderstand(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         # https://blog.finxter.com/python-telegram-bot/
         try:
-            msg = "Sorry, ik heb je niet begrepen, zocht je naar /hulp ?"
+            msg = self.dontunderstand
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
@@ -256,19 +253,59 @@ Vragen? Mail naar info@itheo.tech
     def systeminfo(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             if int(update.message.chat_id) == int(self.admin_id):
+                versie_path = os.path.join(self.path, "VERSION.TXT")
+                version = open(versie_path, "r").read()
                 dbsize = self.fileSize(self.dbname)
-                uptime = os.times()[4]
+                seconds = int(time() - self.startTime)
+                uptime = self.secondsToText(seconds)
                 message = f"""
 
-Here's some system info
+Hier is wat systeem informatie
 
-The current Db size is {dbsize}
+De bot is versie {version}
+De database is op dit moment  {dbsize}
 
-The system has been running for {uptime}
+Het systeem draait nu voor  {uptime}
 """
-                context.bot.send_message(chat_id=update.message.chat_id, text=message)
+                context.bot.send_message(chat_id=self.admin_id, text=message)
             else:
-                context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I'm not allowed to show you!")
+                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
+        except Exception as e:
+            log.error(e)
+
+    def list_ids(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            if int(update.message.chat_id) == int(self.admin_id):
+                ids = self.get_users()
+                context.bot.send_message(chat_id=self.admin_id, text=f"Here's the list of ids you requested!\n {str(ids)}")
+            else:
+                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
+        except Exception as e:
+            log.error(e)
+
+    def onderhoud(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            if int(update.message.chat_id) == int(self.admin_id):
+                print(context.args)
+                if context.args[0] == 'aan':
+                    msg = "We gaan even in ouderhoud voor updates! We zijn zo weer terug!"
+                elif context.args[0] == 'uit':
+                    msg = "Het onderhoud is gedaan. We zijn weer terug!"
+                else:
+                    msg = """
+Ik begrijp je niet, het commando is
+/onderhoud aan
+/onderhoud uit
+                    """
+                    context.bot.send_message(chat_id=self.admin_id, text=msg)
+                    return
+                for id in self.get_users():
+                    if id == 0:
+                        continue
+                    context.bot.send_message(chat_id=id, text=msg)
+                # context.bot.send_message(chat_id=self.admin_id, text=f"Here's the list of ids you requested!\n {str(ids)}")
+            else:
+                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
         except Exception as e:
             log.error(e)
 
@@ -278,37 +315,74 @@ The system has been running for {uptime}
                 EP = EnergiePrijzen(dbname=self.dbname)
                 EP.set_dates()
 
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"This is gonna take a while!!\n")
+                context.bot.send_message(chat_id=self.admin_id, text=f"This is gonna take a while!!\n")
 
                 #stroom vanaf 2017
                 EP.get_history(startdate="2017-01-01", enddate="2017-01-02", kind=1)
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Energy import ready!!\n")
+                context.bot.send_message(chat_id=self.admin_id, text=f"Energy import ready!!\n")
                 #gas vanaf 2018
                 EP.get_history(startdate="2018-01-01", enddate="2018-01-02", kind=2)
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Gas import ready!!\n")
+                context.bot.send_message(chat_id=self.admin_id, text=f"Gas import ready!!\n")
                 EP = None
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Databases filled!!\n")
+                context.bot.send_message(chat_id=self.admin_id, text=f"Databases filled!!\n")
             else:
-                context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I'm not allowed to show you!")
+                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
         except Exception as e:
             log.error(e)
 
 # some other functions
     @staticmethod
     def unitConvertor(sizeInBytes):
-        #Cinverts the file unit
-        if sizeInBytes < 1024*1024:
-            size = round(sizeInBytes/1024)
-            return f"{size} KB"
-        elif sizeInBytes < 1024*1024*1024:
-            size = round(sizeInBytes/(1024*1024))
-            return f"{size} MB"
-        elif sizeInBytes >= 1024*1024*1024:
-            size = round(sizeInBytes/(1024*1024*1024))
-            return f"{size} GB"
-        else:
-            return f"{sizeInBytes} Bytes"
+        try:
+            #Cinverts the file unit
+            if sizeInBytes < 1024*1024:
+                size = round(sizeInBytes/1024)
+                return f"{size} KB"
+            elif sizeInBytes < 1024*1024*1024:
+                size = round(sizeInBytes/(1024*1024))
+                return f"{size} MB"
+            elif sizeInBytes >= 1024*1024*1024:
+                size = round(sizeInBytes/(1024*1024*1024))
+                return f"{size} GB"
+            else:
+                return f"{sizeInBytes} Bytes"
+        except Exception as e:
+            log.error(e)
 
     def fileSize(self, filePath):
-        size = os.path.getsize(filePath)
-        return self.unitConvertor(size)
+        try:
+            size = os.path.getsize(filePath)
+            return self.unitConvertor(size)
+        except Exception as e:
+            log.error(e)
+
+    @staticmethod
+    def secondsToText(unit, granularity = 2):
+        try:
+            ratios = {
+                'decennia' : 311040000, # 60 * 60 * 24 * 30 * 12 * 10
+                'jaar'   : 31104000,  # 60 * 60 * 24 * 30 * 12
+                'maanden'  : 2592000,   # 60 * 60 * 24 * 30
+                'dagen'    : 86400,     # 60 * 60 * 24
+                'uur'   : 3600,      # 60 * 60
+                'minuten' : 60,        # 60
+                'seconden' : 1          # 1
+            }
+
+            texts = []
+            for ratio in ratios:
+                result, unit = divmod(unit, ratios[ratio])
+                if result:
+                    if result == 1:
+                        ratio = ratio.rstrip('s')
+                    texts.append(f'{result} {ratio}')
+            texts = texts[:granularity]
+            if not texts:
+                return f'0 {list(ratios)[-1]}'
+            text = ', '.join(texts)
+            if len(texts) > 1:
+                index = text.rfind(',')
+                text = f'{text[:index]} and {text[index + 1:]}'
+            return text
+        except Exception as e:
+            log.error(e)

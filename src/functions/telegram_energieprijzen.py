@@ -1,5 +1,4 @@
 import os
-
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler
 from functions.telegram_functions import Telegram_Functions
@@ -68,6 +67,9 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
 
             system_handler = CommandHandler('system', self.systeminfo)
             u.dispatcher.add_handler(system_handler)
+
+            onderhoud_handler = CommandHandler('onderhoud', self.onderhoud)
+            u.dispatcher.add_handler(onderhoud_handler)
 
             # Unknown handlers
 
