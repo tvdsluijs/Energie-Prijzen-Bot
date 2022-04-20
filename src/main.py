@@ -58,7 +58,8 @@ class EnergieBot():
 
     def readConfig(self)-> None:
         try:
-            self.admin_ids = self.config['telegram']['admin_ids'].split(',')
+            admin_ids = self.config['telegram']['admin_ids'].split(',')
+            self.admin_ids = [int(i) for i in admin_ids]
             self.telegram_key = self.config['telegram']['key']
         except KeyError as e:
             log.critical(e)
