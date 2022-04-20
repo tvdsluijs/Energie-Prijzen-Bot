@@ -34,7 +34,7 @@ class EnergieBot():
             if not self.check_file(file=self.config_file):
                 raise Exception('Config file not found')
             self.config = None
-            self.admin = None
+            self.admin_ids = None
             self.initConfig()
             self.readConfig()
         except Exception as e:
@@ -57,7 +57,7 @@ class EnergieBot():
 
     def readConfig(self)-> None:
         try:
-            self.admin = self.config['telegram']['admin']
+            self.admin_ids = self.config['telegram']['admin_ids'].split(',')
             self.telegram_key = self.config['telegram']['key']
         except KeyError as e:
             log.critical(e)
@@ -69,16 +69,16 @@ class EnergieBot():
 if __name__ == "__main__":
     startTime = time()
     eb = EnergieBot()
-    # EP = EnergiePrijzen()
-    # EP.set_dates()
-    # EP.get_lowest_price(date=EP.startdate)
     dbname = "data/energieprijzen.db"
     esql = EnergiePrijzen_SQL(dbname=dbname)
     for table in ['energy', 'user']:
         esql.no_table(table=table)
-    if eb.admin is not None or eb.admin != "":
-        esql.add_user(user_id=eb.admin)
+    if eb.admin_ids:
+        for id in eb.admin_ids:
+            if int(id) == 0:
+                continue
+            esql.add_user(user_id=int(id))
     esql = None
     path = os.path.dirname(os.path.realpath(__file__))
-    TE = Telegram_EnergiePrijzen(dbname=dbname,admin_id=eb.admin,telegram_key=eb.telegram_key, path=path, startTime=startTime)
+    TE = Telegram_EnergiePrijzen(dbname=dbname,admin_ids=eb.admin_ids,telegram_key=eb.telegram_key, path=path, startTime=startTime)
     TE.start_telegram()

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 TAG_NAME=$(cat src/VERSION.TXT)
 PUSH_MSG=$1

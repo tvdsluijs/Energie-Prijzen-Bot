@@ -1,8 +1,8 @@
 // rename this file to config.conf
 // fill in the telegram bot api key
-//
+// fill in your admin id or id's (alwasy use multiple or end with ,0 )
 // remove this and the above lines
 
 [telegram]
 key:
-admin:
+admin_ids: int_1,int_2,int_3

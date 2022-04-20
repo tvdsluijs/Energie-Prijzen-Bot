@@ -89,6 +89,6 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
 
 if __name__ == "__main__":
     telegram_key = ""
-    admin_id = ""
-    TE = Telegram_EnergiePrijzen(admin_id=admin_id,telegram_key=telegram_key)
+    admin_ids = [2349539035,0]
+    TE = Telegram_EnergiePrijzen(admin_ids=admin_ids,telegram_key=telegram_key)
     TE.start_telegram()

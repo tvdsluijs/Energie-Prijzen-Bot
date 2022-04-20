@@ -19,11 +19,11 @@ class Telegram_Functions(object):
         try:
             self.dbname = kwargs['dbname']
             self.telegram_key = kwargs['telegram_key']
-            self.admin_id = kwargs['admin_id']
+            self.admin_ids = kwargs['admin_ids']
             self.path = kwargs['path']
             self.startTime = kwargs['startTime']
 
-            self.dontunderstand = "Sorry, ik heb je niet begrepen, zocht je naar /hulp ?"
+            self.dontunderstand_text = "Sorry, ik heb je niet begrepen, zocht je naar /hulp ?"
 
             self.help_tekst = """
 Let op! Alle energie bedragen zijn de kale inkoopsprijzen.
@@ -67,25 +67,25 @@ Vragen? Mail naar info@itheo.tech
 
     def start_me_up(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            help_text = """Welkom bij de Energie prijzen bot!\n""" + self.help_tekst
+            msg = """Welkom bij de Energie prijzen bot!\n""" + self.help_tekst
 
-            context.bot.send_message(chat_id=update.message.chat_id, text=help_text)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
 
     def help_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            help_text = """Ik ben hier om je te helpen!\n""" + self.help_tekst
-
-            context.bot.send_message(chat_id=update.message.chat_id, text=help_text)
+            msg = """Ik ben hier om je te helpen!\n""" + self.help_tekst
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
 
     def donate(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            context.bot.send_message(chat_id=update.message.chat_id, text="https://donorbox.org/tvdsluijs-github")
+            msg = "https://donorbox.org/tvdsluijs-github"
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -148,7 +148,7 @@ Vragen? Mail naar info@itheo.tech
     def dontunderstand(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         # https://blog.finxter.com/python-telegram-bot/
         try:
-            msg = self.dontunderstand
+            msg = self.dontunderstand_text
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
@@ -160,13 +160,13 @@ Vragen? Mail naar info@itheo.tech
             esql = None
             match mss_id:
                 case 0:
-                    mss = f"Jouw user chat id ({update.message.chat_id}) staat al in het systeem!"
+                    msg = f"Jouw user chat id ({update.message.chat_id}) staat al in het systeem!"
                 case 1:
-                    mss = f"Ik heb je toegevoegd met user chat id: {update.message.chat_id}! Vanaf nu ontvang je de energie prijzen!"
+                    msg = f"Ik heb je toegevoegd met user chat id: {update.message.chat_id}! Vanaf nu ontvang je de energie prijzen!"
                 case -1:
-                    mss = f"Ai... we hebben een probleem om je toe te voegen met user chat id ({update.message.chat_id}). Probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft."
+                    msg = f"Ai... we hebben een probleem om je toe te voegen met user chat id ({update.message.chat_id}). Probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft."
 
-            context.bot.send_message(chat_id=update.message.chat_id, text=mss)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -175,25 +175,26 @@ Vragen? Mail naar info@itheo.tech
             esql = EnergiePrijzen_SQL(dbname=self.dbname)
             mss_id = esql.remove_user(user_id=update.message.chat_id)
             esql = None
-            mss = "Oeps... er ging iets fout!"
+            msg = "Oeps... er ging iets fout!"
 
             print(mss_id)
 
             match mss_id:
                 case 0:
-                    mss = f"Jouw user chat id ({update.message.chat_id}) is niet gevonden, dus verwijderen kan niet!"
+                    msg = f"Jouw user chat id ({update.message.chat_id}) is niet gevonden, dus verwijderen kan niet!"
                 case 1:
-                    mss = f"Jouw user chat id ({update.message.chat_id}) is verwijdert! Je ontvangt nu geen energie prijzen meer!"
+                    msg = f"Jouw user chat id ({update.message.chat_id}) is verwijdert! Je ontvangt nu geen energie prijzen meer!"
                 case -1:
-                    mss = f"Ai... we hebben een probleem om jouw user chat id ({update.message.chat_id}) te verwijderen. Probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft."
+                    msg = f"Ai... we hebben een probleem om jouw user chat id ({update.message.chat_id}) te verwijderen. Probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft."
 
-            context.bot.send_message(chat_id=update.message.chat_id, text=mss)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
     def get_id(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            context.bot.send_message(chat_id=update.message.chat_id, text=f"Jouw user chat id is {update.message.chat_id}!")
+            msg = f"Jouw user chat id is {update.message.chat_id}!"
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -201,9 +202,9 @@ Vragen? Mail naar info@itheo.tech
         try:
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
-            message = EP.get_todays_prices(date=EP.today)
+            msg = EP.get_todays_prices(date=EP.today)
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=message)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -212,10 +213,10 @@ Vragen? Mail naar info@itheo.tech
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             if int(EP.current_hour_short) < 15:
-                message = "Sorry, het is nog geen 15uur geweest!"
+                msg = "Sorry, het is nog geen 15uur geweest!"
             else:
-                message = EP.get_todays_prices(date=EP.enddate)
-            context.bot.send_message(chat_id=update.message.chat_id, text=message)
+                msg = EP.get_todays_prices(date=EP.enddate)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -223,9 +224,9 @@ Vragen? Mail naar info@itheo.tech
         try:
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
-            message = EP.get_cur_price()
+            msg = EP.get_cur_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=message)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -233,9 +234,9 @@ Vragen? Mail naar info@itheo.tech
         try:
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
-            message = EP.get_todays_highest_price()
+            msg = EP.get_todays_highest_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=message)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -243,22 +244,23 @@ Vragen? Mail naar info@itheo.tech
         try:
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
-            message = EP.get_todays_lowest_price()
+            msg = EP.get_todays_lowest_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=message)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
     # some admin functions
     def systeminfo(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            if int(update.message.chat_id) == int(self.admin_id):
+            msg = self.dontunderstand_text
+            if int(update.message.chat_id) in self.admin_ids:
                 versie_path = os.path.join(self.path, "VERSION.TXT")
                 version = open(versie_path, "r").read()
                 dbsize = self.fileSize(self.dbname)
                 seconds = int(time() - self.startTime)
                 uptime = self.secondsToText(seconds)
-                message = f"""
+                msg = f"""
 
 Hier is wat systeem informatie:
 
@@ -267,26 +269,26 @@ De database is op dit moment  {dbsize}
 
 Het systeem draait nu voor  {uptime}
 """
-                context.bot.send_message(chat_id=self.admin_id, text=message)
-            else:
-                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
+
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+
         except Exception as e:
             log.error(e)
 
     def list_ids(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            if int(update.message.chat_id) == int(self.admin_id):
+            msg = self.dontunderstand_text
+            if int(update.message.chat_id) in self.admin_ids:
                 ids = self.get_users()
-                context.bot.send_message(chat_id=self.admin_id, text=f"Here's the list of ids you requested!\n {str(ids)}")
-            else:
-                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
+                msg = f"Here's the list of ids you requested!\n {str(ids)}"
+
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
     def onderhoud(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            if int(update.message.chat_id) == int(self.admin_id):
-                print(context.args)
+            if int(update.message.chat_id) in self.admin_ids:
                 if context.args[0] == 'aan':
                     msg = "We gaan even in ouderhoud voor updates! We zijn zo weer terug!"
                 elif context.args[0] == 'uit':
@@ -297,36 +299,36 @@ Ik begrijp je niet, het commando is
 /onderhoud aan
 /onderhoud uit
                     """
-                    context.bot.send_message(chat_id=self.admin_id, text=msg)
+                    context.bot.send_message(chat_id=update.message.chat_id, text=msg)
                     return
                 for id in self.get_users():
                     if id == 0:
                         continue
                     context.bot.send_message(chat_id=id, text=msg)
-                # context.bot.send_message(chat_id=self.admin_id, text=f"Here's the list of ids you requested!\n {str(ids)}")
+
             else:
-                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
+                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand_text)
         except Exception as e:
             log.error(e)
 
     def fill_db(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            if int(update.message.chat_id) == int(self.admin_id):
+            if int(update.message.chat_id) in self.admin_ids:
                 EP = EnergiePrijzen(dbname=self.dbname)
                 EP.set_dates()
 
-                context.bot.send_message(chat_id=self.admin_id, text=f"This is gonna take a while!!\n")
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"This is gonna take a while!!\n")
 
                 #stroom vanaf 2017
                 EP.get_history(startdate="2017-01-01", enddate="2017-01-02", kind=1)
-                context.bot.send_message(chat_id=self.admin_id, text=f"Energy import ready!!\n")
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"Energy import ready!!\n")
                 #gas vanaf 2018
                 EP.get_history(startdate="2018-01-01", enddate="2018-01-02", kind=2)
-                context.bot.send_message(chat_id=self.admin_id, text=f"Gas import ready!!\n")
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"Gas import ready!!\n")
                 EP = None
-                context.bot.send_message(chat_id=self.admin_id, text=f"Databases filled!!\n")
+                context.bot.send_message(chat_id=update.message.chat_id, text=f"Databases filled!!\n")
             else:
-                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand)
+                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand_text)
         except Exception as e:
             log.error(e)
 

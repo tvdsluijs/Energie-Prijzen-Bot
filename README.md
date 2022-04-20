@@ -19,8 +19,10 @@ Als je dit script wilt draaien kan dat direct via python
 of via de docker file
 `docker build -t energie-prijzen-bot .`
 
-en daarna
-`docker run -d energie-prijzen-bot`
+ga daarna in de data folder staan en
+`docker run -d energie-prijzen-bot -v $(pwd)/data:/src/data`
+
+
 
 Vergeet niet dat je een Telegram bot moet aanmaken en daar de HTTP API Token moet kopiëren.
 
@@ -30,7 +32,7 @@ De Token plaats je in `./config/config.conf` een voorbeeld van de config vind je
 
 ###  Afhankelijkheden
 - Python 3.8 (minimum)
-- Telegram bot key
+- Telegram bot token
 - Docker
 
 #### Docker extra's
@@ -50,6 +52,9 @@ De Token plaats je in `./config/config.conf` een voorbeeld van de config vind je
 **Stop and verwijder container**
 docker stop CONTAINER_ID
 docker rm CONTATINER_ID
+
+**Docker log files**
+docker container logs CONTATINER_ID
 
 ###  Installeren
 
