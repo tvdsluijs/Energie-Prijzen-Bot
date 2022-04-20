@@ -35,6 +35,7 @@ class EnergieBot():
                 raise Exception('Config file not found')
             self.config = None
             self.admin_ids = None
+            self.telegram_key = None
             self.initConfig()
             self.readConfig()
         except Exception as e:
