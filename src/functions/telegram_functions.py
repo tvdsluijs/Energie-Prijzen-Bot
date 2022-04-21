@@ -54,6 +54,7 @@ Vragen? Mail naar info@itheo.tech
 
             Dit is de Amind help
             /fill -> vul de database met historische data
+            /listids -> lijst met aangemelde personen
             /onderhoud aan -> stuur iedereen een onderhoud bericht
             /onderhoud uit -> stuur iedereen een onderhoud bericht
             /system -> wat systeem informatie

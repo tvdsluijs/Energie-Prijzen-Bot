@@ -1,12 +1,10 @@
-from sqlite3 import dbapi2
-import sys
 from ast import Constant
 import os
 import json
 import requests
 import logging
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from dateutil import parser, tz
 
 from time import sleep
@@ -39,6 +37,9 @@ class EnergiePrijzen():
         self.current_hour_short = None
         self.prices = {}
 
+        self.weekdays = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag']
+        self.months = ['', 'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
+        self.nice_day = None #net uitgeschreven dag donderdag 22 april
 
     @staticmethod
     def get_timestamp(time_stamp:str = "")->dict:
@@ -63,7 +64,6 @@ class EnergiePrijzen():
             self.now = datetime.now()
             self.yesterday = datetime.now() + timedelta(days=-1)
             self.tomorrow = datetime.now() + timedelta(days=+1)
-            self.next_hour = datetime.now() + timedelta(hours=+1)
 
             self.today = self.now.strftime("%Y-%m-%d")
             self.startdate = self.yesterday.strftime("%Y-%m-%d")
@@ -71,6 +71,8 @@ class EnergiePrijzen():
 
             self.current_hour = self.now.strftime("%H:00")
             self.current_hour_short = int(self.now.strftime("%H"))
+
+            self.next_hour = datetime.now() + timedelta(hours=+1)
             self.next_hour = self.next_hour.strftime("%H:00")
 
         except Exception as e:
@@ -199,7 +201,8 @@ class EnergiePrijzen():
             if data['elect'] is not None:
                 for d in data['elect']:
                     if d['fromtime'] == self.next_hour:
-                        msg += f"""Om {d['fromtime']} zitten we op de bodem! \n ⚡  €. {d['price']} \n"""
+                        #  zitten we op de bodem!
+                        msg += f"""Op {self.get_nice_day(date=date)} is de laagste prijs om {d['fromtime']}\n ⚡  €. {d['price']} \n"""
             if msg != "":
                 return msg
             return False
@@ -228,12 +231,12 @@ class EnergiePrijzen():
             data = self.get_lowest_price(date=date)
             msg = ""
             if data['elect'] is not None:
-                msg += """Bodemprijzen vandaag voor ⚡ \n"""
+                msg += f"""Laagste prijzen ⚡ {self.get_nice_day(date=date)}\n"""
                 for d in data['elect']:
                     msg += f"""{d['fromtime']} -> €. {d['price']}\n"""
 
             if data['gas'] is not None:
-                msg += """\nBodemprijs vandaag voor 🔥 \n"""
+                msg += f"""\nPrijzen voor 🔥 op {self.get_nice_day(date=date)}\n"""
                 for d in data['gas']:
                     if d['fromtime'] == '06:00':
                         msg += f"""vanaf 6 uur -> €. {d['price']}\n"""
@@ -252,12 +255,12 @@ class EnergiePrijzen():
             data = self.get_highest_price(date=date)
             msg = ""
             if data['elect'] is not None:
-                msg += """Hoogste prijzen vandaag voor ⚡ \n"""
+                msg += f"""Hoogste prijzen ⚡ {self.get_nice_day(date=date)}\n"""
                 for d in data['elect']:
                     msg += f"""{d['fromtime']} €. {d['price']}\n"""
 
             if data['gas'] is not None:
-                msg += """\nHoogste prijs vandaag voor 🔥 \n"""
+                msg += f"""\nPrijzen voor 🔥 op {self.get_nice_day(date=date)}\n"""
                 for d in data['gas']:
                     if d['fromtime'] == '06:00':
                         msg += f"""vanaf 6 uur -> €. {d['price']}\n"""
@@ -324,6 +327,26 @@ class EnergiePrijzen():
             log.error(e)
             return "Great Scott! 🚧 You found a error!"
 
+    def get_nice_day(self, date:str = None)-> str:
+        try:
+            if date is None:
+                date = self.today
+
+            date = f"{date} 01:01:01"
+            dt = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+
+            day = dt.strftime("%d")
+            weekday = self.weekdays[dt.weekday()]
+            month_int = int(dt.strftime("%m"))
+            month = self.months[month_int]
+
+            return f"{weekday} {day} {month}"
+
+        except Exception as e:
+            log.error(e)
+            return "Great Scott! 🚧 You found a error!"
+
+
     def get_todays_prices(self, date:str = None)->str:
         try:
             if date is None:
@@ -331,8 +354,7 @@ class EnergiePrijzen():
             esql = EnergiePrijzen_SQL(dbname=self.dbname )
             esql.connection()
             data = esql.get_prices(date=date)
-            message = f"Prijzen van {date}\n"
-            elect = []
+            message = f"Prijzen van {self.get_nice_day(date=date)}\n"
             gas_voor = ""
             gas_na = ""
             for v in data:

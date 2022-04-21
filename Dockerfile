@@ -2,7 +2,7 @@
 # Build By:
 # https://itheo.tech 2021
 # MIT License
-# Dockerfile to run the ddns.py script
+# Dockerfile to run the python script
 #**************************************
 
 FROM python:alpine3.15
