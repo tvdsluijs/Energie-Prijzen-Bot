@@ -71,6 +71,14 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             onderhoud_handler = CommandHandler('onderhoud', self.onderhoud)
             u.dispatcher.add_handler(onderhoud_handler)
 
+            tomorrowminus_handler = CommandHandler('tomorrowminus', self.tomorrowminus)
+            u.dispatcher.add_handler(tomorrowminus_handler)
+
+            nexthourminus_handler = CommandHandler('nexthourminus', self.nexthourminus)
+            u.dispatcher.add_handler(nexthourminus_handler)
+
+
+
             # Unknown handlers
 
             unknown_handler = MessageHandler(Filters.command, self.dontunderstand)

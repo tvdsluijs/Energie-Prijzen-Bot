@@ -78,6 +78,11 @@ class EnergiePrijzen():
         except Exception as e:
             log.error(e)
 
+    @staticmethod
+    def get_next_hour(hours:int = 1):
+        next_hour = datetime.now() + timedelta(hours=+hours)
+        return next_hour.strftime("%H:00")
+
     def get_energyzero_data(self, startdate:str = "", enddate:str = "",kind:str = ENERGIE.value)->json:
         try:
             if startdate == "":
@@ -181,15 +186,20 @@ class EnergiePrijzen():
 
     def get_next_hour_minus_price(self, date:str = None)->str:
         try:
-            data = self.get_lowest_price(date=date)
+            date = self.enddate
+            data = self.get_prices(date=date, kind='e')
             msg = ""
-            if data['elect'] is not None:
-                for d in data['elect']:
-                    if d['fromtime'] == self.next_hour and d['price'] < 0:
-                        msg += f""" Om {d['fromtime']} gaan we onder de 0!\n ⚡  €. {d['price']} \n"""
+            if data is not None:
+                for d in data:
+                    if d['fromtime'] == self.next_hour and d['price'] <= 0:
+                        msg = f"Om {d['fromtime']} gaat de ⚡ prijs naar\n"
+                        msg += f"""€. {d['price']}\n"""
             if msg != "":
                 return msg
             return False
+        except KeyError as e:
+            log.error(e)
+            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
         except Exception as e:
             log.error(e)
             return "Great Scott! 🚧  Je hebt een foutje gevonden!"
@@ -198,11 +208,29 @@ class EnergiePrijzen():
         try:
             data = self.get_lowest_price(date=date)
             msg = ""
+            prijs = 0
+            nexthour = ""
+            tottijd = None
             if data['elect'] is not None:
+                msg = f"Laagste prijs van {self.get_nice_day(date=date)}"
+                h = 1
                 for d in data['elect']:
+
                     if d['fromtime'] == self.next_hour:
-                        #  zitten we op de bodem!
-                        msg += f"""Op {self.get_nice_day(date=date)} is de laagste prijs om {d['fromtime']}\n ⚡  €. {d['price']} \n"""
+                        vantijd = d['fromtime']
+                        prijs = d['prijs']
+                        continue
+
+                    nexthour = self.get_next_hour(hours=h)
+                    h += 1
+                    if prijs == d['prijs'] and d['fromtime'] == nexthour:
+                        tottijd = self.get_next_hour(hours=h)
+
+                if tottijd is not None:
+                     msg += f""" tussen {vantijd} en {tottijd}\n ⚡  €. {prijs} \n"""
+                else:
+                     msg += f""" om {vantijd}\n ⚡  €. {prijs} \n"""
+
             if msg != "":
                 return msg
             return False
@@ -213,12 +241,13 @@ class EnergiePrijzen():
     def get_tomorrows_minus_price(self)->str:
         try:
             date = self.enddate
-            data = self.get_lowest_price(date=date)
+            data = self.get_prices(date=date, kind='e')
             msg = ""
-            if data['elect'] is not None:
-                for d in data['elect']:
-                    if d['price'] < 0:
-                        msg += f"""Morgen om {d['fromtime']} gaan we onder de 0!\n ⚡  €. {d['price']} \n"""
+            if data is not None:
+                msg = f"Morgen {self.get_nice_day(date=date)} gaan we 0 en lager!\n"
+                for d in data:
+                    if d['price'] <= 0:
+                        msg += f"""⚡ {d['fromtime']} -> €. {d['price']}\n"""
             if msg != "":
                 return msg
             return False

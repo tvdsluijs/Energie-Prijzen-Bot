@@ -127,11 +127,11 @@ class EnergiePrijzen_SQL():
 
             output_obj = cur.execute(SQL, (date, ))
             results = output_obj.fetchall()
-            row_as_dict = []
+            rs_as_list= []
             for row in results:
-                row_as_dict.append( {output_obj.description[i][0]:row[i] for i in range(len(row))} )
+                rs_as_list.append( {output_obj.description[i][0]:row[i] for i in range(len(row))} )
 
-            return row_as_dict
+            return rs_as_list
 
         except sqlite3.IntegrityError:
             return 0

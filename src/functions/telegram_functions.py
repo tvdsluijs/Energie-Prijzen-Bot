@@ -59,6 +59,8 @@ Vragen? Mail naar info@itheo.tech
             /onderhoud aan -> stuur iedereen een onderhoud bericht
             /onderhoud uit -> stuur iedereen een onderhoud bericht
             /system -> wat systeem informatie
+            /nexthourminus -> is there a minus price next hour
+            /tomorrowminus -> tomorrows 0 and below prices
             """
             self.dates_hour = []
 
@@ -108,6 +110,9 @@ Vragen? Mail naar info@itheo.tech
             self.dates_hour.append(date_hour) # add hour to list
             self.dates_hour = self.dates_hour[-5:] # remove last hour
 
+            EP = EnergiePrijzen(dbname=self.dbname)
+            EP.set_dates()
+
             #stroom = 1, gas 2 2
             for sg in [1,2]:
                 data = EP.get_energyzero_data(kind=sg)
@@ -115,15 +120,14 @@ Vragen? Mail naar info@itheo.tech
 
             cur_hour = int(now.strftime("%H"))
             if cur_hour not in [23,0,1,2,3,4,5,6]:
-                EP = EnergiePrijzen(dbname=self.dbname)
-                EP.set_dates()
 
                 ids = self.get_users()
-                if (msg := EP.get_next_hour_lowest_price()):
-                    for id in ids:
-                        if id == 0:
-                            continue
-                        context.bot.send_message(chat_id=id, text=msg)
+
+                # if (msg := EP.get_next_hour_lowest_price()):
+                #     for id in ids:
+                #         if id == 0:
+                #             continue
+                #         context.bot.send_message(chat_id=id, text=msg)
 
                 if (msg := EP.get_next_hour_minus_price()):
                     for id in ids:
@@ -131,14 +135,14 @@ Vragen? Mail naar info@itheo.tech
                             continue
                         context.bot.send_message(chat_id=id, text=msg)
 
-                if int(EP.current_hour_short) == 15:
+                if int(EP.current_hour_short) == 16:
                     if (msg := EP.get_tomorrows_minus_price()):
                         for id in ids:
                             if id == 0:
                                 continue
                             context.bot.send_message(chat_id=id, text=msg)
 
-                EP = None
+            EP = None
 
         except Exception as e:
             log.error(e)
@@ -267,6 +271,28 @@ Vragen? Mail naar info@itheo.tech
             log.error(e)
 
     # some admin functions
+
+    def tomorrowminus(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            EP = EnergiePrijzen(dbname=self.dbname)
+            EP.set_dates()
+            msg = EP.get_tomorrows_minus_price()
+            EP = None
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+        except Exception as e:
+            log.error(e)
+
+    def nexthourminus(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            EP = EnergiePrijzen(dbname=self.dbname)
+            EP.set_dates()
+            msg = EP.get_next_hour_lowest_price()
+            EP = None
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+        except Exception as e:
+            log.error(e)
+
+
     def systeminfo(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             msg = self.dontunderstand_text
