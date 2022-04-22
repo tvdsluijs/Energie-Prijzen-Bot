@@ -5,6 +5,7 @@ from time import time
 from telegram.ext import Updater, CommandHandler
 from functions.energieprijzen import EnergiePrijzen
 from functions.energieprijzen_sql import EnergiePrijzen_SQL
+from datetime import datetime
 
 import logging
 
@@ -59,6 +60,7 @@ Vragen? Mail naar info@itheo.tech
             /onderhoud uit -> stuur iedereen een onderhoud bericht
             /system -> wat systeem informatie
             """
+            self.dates_hour = []
 
             super().__init__()
         except KeyError as e:
@@ -95,15 +97,27 @@ Vragen? Mail naar info@itheo.tech
             #update prices
             #at 16hour do a send lowest prices overview
             #every hour send a at next hour you will have the lowest prices
-            EP = EnergiePrijzen(dbname=self.dbname)
-            EP.set_dates()
+            now = datetime.now()
+            date_hour = now.strftime("%Y-%m-%d %H:00")
+
+            # Check if current hour in list
+            if date_hour in self.dates_hour:
+                return
+
+            # hour not in list so do somehtings
+            self.dates_hour.append(date_hour) # add hour to list
+            self.dates_hour = self.dates_hour[-5:] # remove last hour
 
             #stroom = 1, gas 2 2
             for sg in [1,2]:
                 data = EP.get_energyzero_data(kind=sg)
                 EP.save_data(data=data, kind=sg)
 
-            if int(EP.current_hour_short) not in [23,0,1,2,3,4,5,6]:
+            cur_hour = int(now.strftime("%H"))
+            if cur_hour not in [23,0,1,2,3,4,5,6]:
+                EP = EnergiePrijzen(dbname=self.dbname)
+                EP.set_dates()
+
                 ids = self.get_users()
                 if (msg := EP.get_next_hour_lowest_price()):
                     for id in ids:
@@ -124,7 +138,8 @@ Vragen? Mail naar info@itheo.tech
                                 continue
                             context.bot.send_message(chat_id=id, text=msg)
 
-            EP = None
+                EP = None
+
         except Exception as e:
             log.error(e)
 

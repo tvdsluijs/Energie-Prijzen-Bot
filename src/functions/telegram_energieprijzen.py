@@ -20,7 +20,7 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             j = u.job_queue
 
             # run every hour
-            job_minute = j.run_repeating(self.call_energiebot, interval=3600, first=2) #ieder uur!
+            job_minute = j.run_repeating(self.call_energiebot, interval=60, first=2) #iedere minuut
 
             get_id_handler = CommandHandler('mijnid',self.get_id)
             u.dispatcher.add_handler(get_id_handler)
