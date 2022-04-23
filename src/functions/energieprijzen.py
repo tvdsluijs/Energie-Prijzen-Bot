@@ -186,7 +186,8 @@ class EnergiePrijzen():
 
     def get_next_hour_minus_price(self, date:str = None)->str:
         try:
-            date = self.enddate
+            if date is None:
+                date = self.today
             data = self.get_prices(date=date, kind='e')
             msg = ""
             if data is not None:
@@ -206,6 +207,8 @@ class EnergiePrijzen():
 
     def get_next_hour_lowest_price(self, date:str = None)->str:
         try:
+            if date is None:
+                date = self.today
             data = self.get_lowest_price(date=date)
             msg = ""
             prijs = 0

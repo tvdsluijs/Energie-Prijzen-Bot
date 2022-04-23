@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import sqlite3
 from time import time;
@@ -28,6 +29,7 @@ class EnergiePrijzen_SQL():
 
             self.conn = sqlite3.connect(self.dbname)
             self.conn.row_factory = sqlite3.Row
+            # self.conn.set_trace_callback(print)
             if not self.conn:
                 raise Exception("No connection!!")
         except Error as e:
@@ -116,18 +118,22 @@ class EnergiePrijzen_SQL():
         try:
             self.connection()
             cur = self.conn.cursor()
-            if kind is None:
-                sql_extra = ""
-            else:
-                sql_extra = f" AND kind = '{kind}'"
+            if date is None:
+                raise Exception('Er is geen datum om prijzen op te halen!')
 
-            SQL =  f"""SELECT fromdate, fromtime, price, kind
+            if kind is not None:
+                SQL = f"""SELECT fromdate, fromtime, price, kind
                       FROM energy
-                      WHERE fromdate = ? {sql_extra};"""
+                      WHERE fromdate = ? AND kind = ?"""
+                output_obj = cur.execute(SQL, (date, kind, ))
+            else:
+                SQL =  f"""SELECT fromdate, fromtime, price, kind
+                        FROM energy
+                        WHERE fromdate = ?;"""
+                output_obj = cur.execute(SQL, (date, ))
 
-            output_obj = cur.execute(SQL, (date, ))
             results = output_obj.fetchall()
-            rs_as_list= []
+            rs_as_list = []
             for row in results:
                 rs_as_list.append( {output_obj.description[i][0]:row[i] for i in range(len(row))} )
 
