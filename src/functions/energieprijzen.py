@@ -247,12 +247,11 @@ class EnergiePrijzen():
             data = self.get_prices(date=date, kind='e')
             msg = ""
             if data is not None:
-                msg = f"Morgen {self.get_nice_day(date=date)} gaan we 0 en lager!\n"
                 for d in data:
                     if d['price'] <= 0:
                         msg += f"""⚡ {d['fromtime']} -> €. {d['price']}\n"""
             if msg != "":
-                return msg
+                return f"Morgen {self.get_nice_day(date=date)} gaan we 0 en lager!\n{msg}"
             return False
         except Exception as e:
             log.error(e)
