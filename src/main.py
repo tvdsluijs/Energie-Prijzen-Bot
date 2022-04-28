@@ -61,6 +61,7 @@ class EnergieBot():
             admin_ids = self.config['telegram']['admin_ids'].split(',')
             self.admin_ids = [int(i) for i in admin_ids]
             self.telegram_key = self.config['telegram']['key']
+            self.entsoe_key =  self.config['entsoe']['key']
         except KeyError as e:
             log.critical(e)
         except Exception as e:
