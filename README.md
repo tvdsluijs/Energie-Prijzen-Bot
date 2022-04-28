@@ -113,8 +113,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ##  Dankbetuigingen
 
-*  [Github photo by Daniel Reche via Pexels](https://www.pexels.com/@daniel-reche-718241)
+* [Github photo by Daniel Reche via Pexels](https://www.pexels.com/@daniel-reche-718241)
 
-*  [Python Telegram Bot]([https://python-telegram-bot.org](https://python-telegram-bot.org/))
+* [Python Telegram Bot]([https://python-telegram-bot.org](https://python-telegram-bot.org/))
 
-*  [dynamische-energieprijzen.nl](https://www.dynamische-energieprijzen.nl/actuele-energieprijzen/)
+* [dynamische-energieprijzen.nl](https://www.dynamische-energieprijzen.nl/actuele-energieprijzen/)
+
+* [mdvmine](https://tweakers.net/gallery/78806/) heeft diverse verbeteringen en verbeteringen gestuurd.
+

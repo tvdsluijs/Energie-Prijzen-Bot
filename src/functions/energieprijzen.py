@@ -196,7 +196,7 @@ class EnergiePrijzen():
                 for d in data:
                     if d['fromtime'] == self.next_hour and d['price'] <= 0:
                         msg = f"Om {d['fromtime']} gaat de ⚡ prijs naar\n"
-                        msg += f"""€ {d['price']}\n"""
+                        msg += f"""€ {d['price']:.2f}\n"""
             if msg != "":
                 return msg
             return False
@@ -251,7 +251,7 @@ class EnergiePrijzen():
             if data is not None:
                 for d in data:
                     if d['price'] <= 0:
-                        msg += f"""⚡ {d['fromtime']} -> € {d['price']}\n"""
+                        msg += f"""⚡ {d['fromtime']} -> € {d['price']:.2f}\n"""
             if msg != "":
                 return f"Morgen {self.get_nice_day(date=date)} gaan we 0 en lager!\n{msg}"
             return False
@@ -266,15 +266,15 @@ class EnergiePrijzen():
             if data['elect'] is not None:
                 msg += f"""Laagste prijzen ⚡ {self.get_nice_day(date=date)}\n"""
                 for d in data['elect']:
-                    msg += f"""{d['fromtime']} -> € {d['price']}\n"""
+                    msg += f"""{d['fromtime']} -> € {d['price']:.2f}\n"""
 
             if data['gas'] is not None:
                 msg += f"""\nPrijzen voor 🔥 op {self.get_nice_day(date=date)}\n"""
                 for d in data['gas']:
                     if d['fromtime'] == '06:00':
-                        msg += f"""vanaf 6 uur -> € {d['price']}\n"""
+                        msg += f"""vanaf 6 uur -> € {d['price']:.2f}\n"""
                     elif d['fromtime'] == '05:00':
-                        msg += f"""tot 6 uur -> € {d['price']}\n"""
+                        msg += f"""tot 6 uur -> € {d['price']:.2f}\n"""
             if msg == "":
                 return "Sorry! Er is geen data beschikbaar!"
 
@@ -290,15 +290,15 @@ class EnergiePrijzen():
             if data['elect'] is not None:
                 msg += f"""Hoogste prijzen ⚡ {self.get_nice_day(date=date)}\n"""
                 for d in data['elect']:
-                    msg += f"""{d['fromtime']} € {d['price']}\n"""
+                    msg += f"""{d['fromtime']} € {d['price']:.2f}\n"""
 
             if data['gas'] is not None:
                 msg += f"""\nPrijzen voor 🔥 op {self.get_nice_day(date=date)}\n"""
                 for d in data['gas']:
                     if d['fromtime'] == '06:00':
-                        msg += f"""vanaf 6 uur -> € {d['price']}\n"""
+                        msg += f"""vanaf 6 uur -> € {d['price']:.2f}\n"""
                     elif d['fromtime'] == '05:00':
-                        msg += f"""tot 6 uur -> € {d['price']}\n"""
+                        msg += f"""tot 6 uur -> € {d['price']:.2f}\n"""
             if msg == "":
                 return "Sorry! Er is geen data beschikbaar!"
 
@@ -353,8 +353,8 @@ class EnergiePrijzen():
                     gas = v
 
             return f"""Huidige prijzen ({elect['fromtime']}-{self.next_hour}):
-⚡ € {elect['price']}
-🔥 € {gas['price']}"""
+⚡ € {elect['price']:.2f}
+🔥 € {gas['price']:.2f}"""
 
         except Exception as e:
             log.error(e)
@@ -393,13 +393,13 @@ class EnergiePrijzen():
             for v in data:
                 if v['kind'] == 'e':
                     # elect.append(v)
-                    message += f"⚡ {v['fromtime']} -> € {v['price']}\n"
+                    message += f"⚡ {v['fromtime']} -> € {v['price']:.2f}\n"
                 if v['kind'] == 'g':
                     tijd = int(v['fromtime'][:-3])
                     if tijd <= 5:
-                        gas_voor = f"🔥 tot 06:00 € {v['price']}\n"
+                        gas_voor = f"🔥 tot 06:00 € {v['price']:.2f}\n"
                     else:
-                        gas_na = f"🔥 na 06:00 € {v['price']}\n"
+                        gas_na = f"🔥 na 06:00 € {v['price']:.2f}\n"
 
             message += "\n" + gas_voor + gas_na
 
