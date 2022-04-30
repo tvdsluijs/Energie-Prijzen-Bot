@@ -1,8 +1,8 @@
-#  Energie Prijzen Bot
+# Energie Prijzen Bot
 
 Een Telegram bot die de dagelijkse actuele inkoop energie prijzen verwerkt en toont.
 
-##  Omschrijving
+## Omschrijving
 Een Telegram bot die de dagelijkse actuele inkoop energie prijzen verwerkt en toont die gebruikt worden door Frank Energie, ANWB, EnergieZero, EasyEnergy, Tibber, Nieuwestroom, LeasePlan Energy, MijnDomein Energie.
 
 Blijf up to date met de laagste stroom en gas tarieven.
@@ -12,7 +12,7 @@ Je hoeft zelf dit script niet te draaien als je nu al informatie wilt ontvangen.
 **Vergeet niet te doneren!**
 [Doneer voor een kop koffie](https://donorbox.org/tvdsluijs-github)
 
-##  Opstarten
+## Opstarten
 Als je dit script wilt draaien kan dat direct via python
 `src/python main.py`
 
@@ -21,8 +21,6 @@ of via de docker file
 
 ga daarna in de data folder staan en
 `docker run -d energie-prijzen-bot -v $(pwd)/data:/src/data`
-
-
 
 Vergeet niet dat je een Telegram bot moet aanmaken en daar de HTTP API Token moet kopiëren.
 
@@ -36,7 +34,6 @@ De Token plaats je in `./config/config.conf` een voorbeeld van de config vind je
 - Docker
 
 #### Docker extra's
-
 **Lijstje van al je docker containers**
 `docker ps -a`
 
@@ -56,7 +53,7 @@ docker rm CONTATINER_ID
 **Docker log files**
 docker container logs CONTATINER_ID
 
-###  Installeren
+### Installeren
 
 Voordat je main.py kan draaien moet je eerst een environment maken
 
@@ -78,7 +75,7 @@ en daarna
 
 Deze doet alles voor je automatisch.
 
-##  Help
+## Help
 
 Heb je hulp nodig in de Bot?
 
@@ -87,19 +84,55 @@ Heb je hulp nodig in de Bot?
 Heb je problemen bij dit script? Stuur dan een berichtje aan
 info@itheo.tech
 
-##  Auteurs
+## Auteurs
 
 [Theo van der Sluijs](https://itheo.tech)
 
-##  Versiegeschiedenis
+## Versiegeschiedenis
 
-*  0.1
+Apr 30 2022
+- Docker slim anders ingericht met Europe/Amsterdam timezone
+- Andere docker python image ivm problemen alpine en pandas
+- diverse layout en aanpassingen, monofont aanpassing en kleine bugfixes
 
-*  Initial Release
+Apr 28 2022
+- Aanpassing aanvraag via mdvmine altijd 2 cijfers achter de komma 0,2 > 0,20
+- Aanpassing aanvraag via mdvmine €. > €
+
+Apr 25 2022
+- bug fix mbt morgen gaan de prijzen lager
+
+Apr 23  2022
+- Small bugfix for showing minus pricing next hour
+
+Apr 22 2022
+- Betere next hour minus prices, kleine verbeteringen
+- New way run_repeating every minuut & run def every hour
+
+Apr 21 2022
+- datum dagen weekdagen enz
+
+Apr 20 2022
+- Kleine aanpassingen ivm int admin_ids
+- Kleine aanpassing aan telegram key verwijzing
+- Dockerfile improvements, volume for easier database placement -
+
+Apr 18 2022
+- Minor bugfixes
+- Kleine update
+
+Apr 16 2022
+- Fixed hourly updates, and some minor fixes
+
+Apr 15 2022
+- Bug fix, sqlite external
+- Bugfixes
+
+Apr 13 2022
+- Initial commit
 
 
-
-##  MIT License
+## MIT License
 
 Copyright (c) 2022 Theo van der Sluijs
 

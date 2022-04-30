@@ -8,8 +8,10 @@
 FROM python:3.10.4-slim
 
 LABEL org.opencontainers.image.authors="info@itheo.tech"
-
+ENV TZ=Europe/Amsterdam
 ENV PY_ENV=prod
+
+RUN apt-get update && apt-get install -y tzdata
 
 WORKDIR /src
 # VOLUME ["/src/data"]

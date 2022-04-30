@@ -137,9 +137,9 @@ class EnergiePrijzen():
     def save_data(self, data:dict = None, kind:int = None)->bool:
         try:
             if data is None:
-                raise Exception('No data to save!')
+                raise Exception('No data to save')
             if kind is None:
-                raise Exception('No power kind!')
+                raise Exception('No power kind')
 
             esql = EnergiePrijzen_SQL(dbname=self.dbname)
             esql.connection()
@@ -151,7 +151,7 @@ class EnergiePrijzen():
                 case self.ENERGIE.value:
                     str_kind = 'e'
                 case _:
-                    raise Exception('No correct power kind!')
+                    raise Exception('No correct power kind')
 
             for row in data['Prices']:
                 prices = {}
@@ -254,16 +254,19 @@ Laagste prijs van {self.get_nice_day(date=date)}"""
         try:
             date = self.enddate
             data = self.get_prices(date=date, kind='e')
-            msg = ""
+            msg_elec = ""
             if data is not None:
                 for d in data:
                     if d['price'] <= 0:
                         price = self.dutch_floats(price=d['price'])
-                        msg += f"""⚡ {d['fromtime']} {price}\n"""
-            if msg != "":
+                        msg_elec += f"""⚡ {d['fromtime']} {price}\n"""
+            if msg_elec != "":
+                # {self.get_nice_day(date=date)}
                 msg = f"""
-Morgen {self.get_nice_day(date=date)} gaan we 0 en lager\!\n{msg}"""
-                return f"""```{msg}```"""
+Morgen gaan we onder 0 euro
+```
+{msg_elec}```"""
+                return msg
             return False
         except Exception as e:
             log.error(e)
@@ -296,7 +299,7 @@ Morgen {self.get_nice_day(date=date)} gaan we 0 en lager\!\n{msg}"""
                 msg +=  f"""{msg_gas}```
 {gas}```"""
             if msg == "":
-                return "Sorry! Er is geen data beschikbaar"
+                return "Sorry, er is geen data beschikbaar"
             return msg
 
         except Exception as e:
@@ -329,7 +332,7 @@ Morgen {self.get_nice_day(date=date)} gaan we 0 en lager\!\n{msg}"""
                 msg +=  f"""{msg_gas}```
 {gas}```"""
             if msg == "":
-                return "Sorry! Er is geen data beschikbaar"
+                return "Sorry, er is geen data beschikbaar"
 
             return msg
         except Exception as e:
@@ -454,7 +457,7 @@ Prijzen {elect['fromtime']}\-{self.next_hour}
             return msg
         except Exception as e:
             log.error(e)
-            return "Sorry, er ging iets fout! Probeer het later nog een keer."
+            return self.foutmelding
         finally:
             esql.close()
 

@@ -25,6 +25,7 @@ class Telegram_Functions(object):
             self.path = kwargs['path']
             self.startTime = kwargs['startTime']
 
+            self.date_hours = []
             self.dontunderstand_text = "Sorry, ik heb je niet begrepen, zocht je naar /hulp ?"
 
             self.commando_hulp = """
@@ -69,8 +70,6 @@ Dit is de Admin help
 /nexthourminus → is there a minus price next hour
 /tomorrowminus → tomorrows 0 and below prices
             """
-            self.dates_hour = []
-
             super().__init__()
         except KeyError as e:
             log.error(e)
@@ -137,12 +136,12 @@ ik ben hier om je te helpen
             date_hour = now.strftime("%Y-%m-%d %H:00")
 
             # Check if current hour in list
-            if date_hour in self.dates_hour:
+            if date_hour in self.date_hours:
                 return
 
             # hour not in list so do somehtings
-            self.dates_hour.append(date_hour) # add hour to list
-            self.dates_hour = self.dates_hour[-5:] # remove last hour
+            self.date_hours.append(date_hour) # add hour to list
+            self.date_hours = self.date_hours[-5:] # remove last hour
 
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
@@ -154,9 +153,7 @@ ik ben hier om je te helpen
 
             cur_hour = int(now.strftime("%H"))
             if cur_hour not in [23,0,1,2,3,4,5,6]:
-
                 ids = self.get_users()
-
                 # if (msg := EP.get_next_hour_lowest_price()):
                 #     for id in ids:
                 #         if id == 0:
@@ -174,10 +171,8 @@ ik ben hier om je te helpen
                         for id in ids:
                             if id == 0:
                                 continue
-                            context.bot.send_message(chat_id=id, text=msg)
-
+                            context.bot.send_message(chat_id=id, text=msg, parse_mode='MarkdownV2')
             EP = None
-
         except Exception as e:
             log.error(e)
 
@@ -214,11 +209,11 @@ ik ben hier om je te helpen
             esql = None
             match mss_id:
                 case 0:
-                    msg = f"Jouw user chat id ({update.message.chat_id}) staat al in het systeem!"
+                    msg = f"Jouw user chat id ({update.message.chat_id}) staat al in het systeem"
                 case 1:
-                    msg = f"Ik heb je toegevoegd met user chat id: {update.message.chat_id}! Vanaf nu ontvang je de energie prijzen!"
+                    msg = f"Ik heb je toegevoegd met user chat id: {update.message.chat_id}! Vanaf nu ontvang je de energie prijzen"
                 case -1:
-                    msg = f"Ai... we hebben een probleem om je toe te voegen met user chat id ({update.message.chat_id}). Probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft."
+                    msg = f"Ai... we hebben een probleem om je toe te voegen met user chat id ({update.message.chat_id}), probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft"
 
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
@@ -229,17 +224,15 @@ ik ben hier om je te helpen
             esql = EnergiePrijzen_SQL(dbname=self.dbname)
             mss_id = esql.remove_user(user_id=update.message.chat_id)
             esql = None
-            msg = "Oeps... er ging iets fout!"
-
-            print(mss_id)
+            msg = "Oeps... er ging iets fout"
 
             match mss_id:
                 case 0:
-                    msg = f"Jouw user chat id ({update.message.chat_id}) is niet gevonden, dus verwijderen kan niet!"
+                    msg = f"Jouw user chat id ({update.message.chat_id}) is niet gevonden, dus verwijderen kan niet"
                 case 1:
-                    msg = f"Jouw user chat id ({update.message.chat_id}) is verwijdert! Je ontvangt nu geen automatische energie updates!"
+                    msg = f"Jouw user chat id ({update.message.chat_id}) is verwijdert! Je ontvangt nu geen automatische energie updates"
                 case -1:
-                    msg = f"Ai... we hebben een probleem om jouw user chat id ({update.message.chat_id}) te verwijderen. Probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft."
+                    msg = f"Ai... we hebben een probleem om jouw user chat id ({update.message.chat_id}) te verwijderen, probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft"
 
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
