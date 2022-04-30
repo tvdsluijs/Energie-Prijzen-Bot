@@ -1,8 +1,7 @@
 import sys
 import os
-from locale import setlocale, LC_NUMERIC,LC_ALL,LC_MONETARY
+# from locale import setlocale, LC_NUMERIC,LC_ALL,LC_MONETARY
 from time import time
-
 
 import configparser
 import logging
@@ -13,9 +12,9 @@ from functions.energieprijzen_sql import EnergiePrijzen_SQL
 from functions.energieprijzen import EnergiePrijzen
 
 os.environ['TZ'] = 'Europe/Amsterdam'
-setlocale(LC_ALL,'nl_NL')
-setlocale(LC_NUMERIC, 'nl_NL')
-setlocale(LC_MONETARY, 'nl_NL')
+# setlocale(LC_ALL,'nl_NL')
+# setlocale(LC_NUMERIC, 'nl_NL')
+# setlocale(LC_MONETARY, 'nl_NL')
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 log_folder = os.path.join(dir_path, 'logging')
@@ -90,3 +89,6 @@ if __name__ == "__main__":
     path = os.path.dirname(os.path.realpath(__file__))
     TE = Telegram_EnergiePrijzen(dbname=dbname,admin_ids=eb.admin_ids,telegram_key=eb.telegram_key, path=path, startTime=startTime)
     TE.start_telegram()
+
+
+#https://t.me/Testenergieprijzenbot
