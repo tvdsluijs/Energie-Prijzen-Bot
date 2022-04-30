@@ -38,6 +38,10 @@ class EnergiePrijzen():
         self.lowest_time = None
         self.current_hour_short = None
         self.prices = {}
+        self.foutmelding = "🚧 Great Scott 🚧 \n Je bent tegen een fout aangelopen"
+        self.morgen = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00']
+        self.middag = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
+
 
         self.weekdays = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag']
         self.months = ['', 'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
@@ -195,17 +199,19 @@ class EnergiePrijzen():
             if data is not None:
                 for d in data:
                     if d['fromtime'] == self.next_hour and d['price'] <= 0:
-                        msg = f"Om {d['fromtime']} gaat de ⚡ prijs naar\n"
-                        msg += f"""€ {d['price']:.2f}\n"""
+                        msg = f"""
+Om {d['fromtime']} gaat de ⚡ prijs naar\n"""
+                        price = self.dutch_floats(price=d['price'])
+                        msg += f"""{price}\n"""
             if msg != "":
                 return msg
             return False
         except KeyError as e:
             log.error(e)
-            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
+            return self.foutmelding
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
+            return self.foutmelding
 
     def get_next_hour_lowest_price(self, date:str = None)->str:
         try:
@@ -217,7 +223,8 @@ class EnergiePrijzen():
             nexthour = ""
             tottijd = None
             if data['elect'] is not None:
-                msg = f"Laagste prijs van {self.get_nice_day(date=date)}"
+                msg = f"""
+Laagste prijs van {self.get_nice_day(date=date)}"""
                 h = 1
                 for d in data['elect']:
 
@@ -237,11 +244,11 @@ class EnergiePrijzen():
                      msg += f""" om {vantijd}\n ⚡  € {prijs} \n"""
 
             if msg != "":
-                return msg
+                return f"""```{msg}```"""
             return False
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
+            return self.foutmelding
 
     def get_tomorrows_minus_price(self)->str:
         try:
@@ -251,61 +258,83 @@ class EnergiePrijzen():
             if data is not None:
                 for d in data:
                     if d['price'] <= 0:
-                        msg += f"""⚡ {d['fromtime']} -> € {d['price']:.2f}\n"""
+                        price = self.dutch_floats(price=d['price'])
+                        msg += f"""⚡ {d['fromtime']} {price}\n"""
             if msg != "":
-                return f"Morgen {self.get_nice_day(date=date)} gaan we 0 en lager!\n{msg}"
+                msg = f"""
+Morgen {self.get_nice_day(date=date)} gaan we 0 en lager\!\n{msg}"""
+                return f"""```{msg}```"""
             return False
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧 You found a error!"
+            return self.foutmelding
 
     def get_todays_lowest_price(self, date:str = None)->str:
         try:
             data = self.get_lowest_price(date=date)
             msg = ""
+            elect = ""
+            gas = ""
             if data['elect'] is not None:
-                msg += f"""Laagste prijzen ⚡ {self.get_nice_day(date=date)}\n"""
+                msg_elec = f"\n{self.get_nice_day(date=date)}\nLaagste prijzen ⚡\n"
                 for d in data['elect']:
-                    msg += f"""{d['fromtime']} -> € {d['price']:.2f}\n"""
+                    price = self.dutch_floats(price=d['price'])
+                    elect += f"{d['fromtime']} {price}\n"
+
+                msg = f"""{msg_elec}```
+{elect}```"""
 
             if data['gas'] is not None:
-                msg += f"""\nPrijzen voor 🔥 op {self.get_nice_day(date=date)}\n"""
+                msg_gas = f"\nPrijzen 🔥\n"
                 for d in data['gas']:
+                    price = self.dutch_floats(price=d['price'])
                     if d['fromtime'] == '06:00':
-                        msg += f"""vanaf 6 uur -> € {d['price']:.2f}\n"""
+                        gas += f"vanaf 6 uur {price}\n"
                     elif d['fromtime'] == '05:00':
-                        msg += f"""tot 6 uur -> € {d['price']:.2f}\n"""
-            if msg == "":
-                return "Sorry! Er is geen data beschikbaar!"
+                        gas += f"tot 6 uur {price}\n"
 
+                msg +=  f"""{msg_gas}```
+{gas}```"""
+            if msg == "":
+                return "Sorry! Er is geen data beschikbaar"
             return msg
+
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
+            return self.foutmelding
 
     def get_todays_highest_price(self, date:str = None)->str:
         try:
             data = self.get_highest_price(date=date)
             msg = ""
+            elect = ""
+            gas = ""
             if data['elect'] is not None:
-                msg += f"""Hoogste prijzen ⚡ {self.get_nice_day(date=date)}\n"""
+                msg_elec = f"{self.get_nice_day(date=date)}\nHoogste prijzen ⚡\n"
                 for d in data['elect']:
-                    msg += f"""{d['fromtime']} € {d['price']:.2f}\n"""
+                    price = self.dutch_floats(price=d['price'])
+                    elect += f"""{d['fromtime']} {price}\n"""
+
+                msg = f"""{msg_elec}```
+{elect}```"""
 
             if data['gas'] is not None:
-                msg += f"""\nPrijzen voor 🔥 op {self.get_nice_day(date=date)}\n"""
+                msg_gas = f"\nPrijzen 🔥\n"
                 for d in data['gas']:
+                    price = self.dutch_floats(price=d['price'])
                     if d['fromtime'] == '06:00':
-                        msg += f"""vanaf 6 uur -> € {d['price']:.2f}\n"""
+                        gas += f"""vanaf 6 uur {price}\n"""
                     elif d['fromtime'] == '05:00':
-                        msg += f"""tot 6 uur -> € {d['price']:.2f}\n"""
+                        gas += f"""tot 6 uur {price}\n"""
+                msg +=  f"""{msg_gas}```
+{gas}```"""
             if msg == "":
-                return "Sorry! Er is geen data beschikbaar!"
+                return "Sorry! Er is geen data beschikbaar"
 
             return msg
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
+            return self.foutmelding
 
     def get_highest_price(self, date:str = None)->dict:
         try:
@@ -318,7 +347,7 @@ class EnergiePrijzen():
             return {'gas': gasdata, 'elect': electdata}
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
+            return self.foutmelding
 
     def get_lowest_price(self, date:str = None)->dict:
         try:
@@ -332,7 +361,7 @@ class EnergiePrijzen():
             return {'gas': gasdata, 'elect': electdata}
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧  Je hebt een foutje gevonden!"
+            return self.foutmelding
 
     def get_cur_price(self, date:str = None, time:str = None)->str:
         try:
@@ -352,15 +381,20 @@ class EnergiePrijzen():
                 if v['kind'] == 'g' and v['fromtime'] == time:
                     gas = v
 
-            return f"""Huidige prijzen ({elect['fromtime']}-{self.next_hour}):
-⚡ € {elect['price']:.2f}
-🔥 € {gas['price']:.2f}"""
+            elect_price = self.dutch_floats(price=elect['price'])
+            gas_price= self.dutch_floats(price=gas['price'])
+
+            return f"""
+Prijzen {elect['fromtime']}\-{self.next_hour}
+```
+⚡ {elect_price}
+🔥 {gas_price}```"""
 
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧 You found a error!"
+            return self.foutmelding
 
-    def get_nice_day(self, date:str = None)-> str:
+    def get_nice_day(self, date:str = None) -> str:
         try:
             if date is None:
                 date = self.today
@@ -377,7 +411,7 @@ class EnergiePrijzen():
 
         except Exception as e:
             log.error(e)
-            return "Great Scott! 🚧 You found a error!"
+            return self.foutmelding
 
 
     def get_todays_prices(self, date:str = None)->str:
@@ -387,28 +421,46 @@ class EnergiePrijzen():
             esql = EnergiePrijzen_SQL(dbname=self.dbname )
             esql.connection()
             data = esql.get_prices(date=date)
-            message = f"Prijzen van {self.get_nice_day(date=date)}\n"
+            msg_elect = f"{self.get_nice_day(date=date)}\nPrijzen ⚡"
+            msg_gas =  f"Prijzen 🔥"
             gas_voor = ""
             gas_na = ""
+            elec = ""
+            msg = ""
+            electra = {}
             for v in data:
                 if v['kind'] == 'e':
-                    # elect.append(v)
-                    message += f"⚡ {v['fromtime']} -> € {v['price']:.2f}\n"
+                    price = self.dutch_floats(price=v['price'])
+                    electra[v['fromtime']] = price
                 if v['kind'] == 'g':
                     tijd = int(v['fromtime'][:-3])
                     if tijd <= 5:
-                        gas_voor = f"🔥 tot 06:00 € {v['price']:.2f}\n"
+                        price = self.dutch_floats(price=v['price'])
+                        gas_voor = f"tot 06:00\t{price}"
                     else:
-                        gas_na = f"🔥 na 06:00 € {v['price']:.2f}\n"
+                        price = self.dutch_floats(price=v['price'])
+                        gas_na = f"na \t06:00\t{price}"
 
-            message += "\n" + gas_voor + gas_na
+            for index,item in enumerate(self.morgen):
+                elec += f"{self.morgen[index]} {electra[self.morgen[index]]}  {self.middag[index]} {electra[self.middag[index]]}\n"
 
-            return message
+            msg = f"""{msg_elect}```
+
+{elec}```
+{msg_gas}
+```
+{gas_voor}
+{gas_na}```"""
+            return msg
         except Exception as e:
             log.error(e)
             return "Sorry, er ging iets fout! Probeer het later nog een keer."
         finally:
             esql.close()
+
+    @staticmethod
+    def dutch_floats(price:float = None,f:str=':.3f')->str:
+        return ('€ {'+f+'}').format(price).replace('.',',')
 
     # Met name wanneer de prijs negatief gaat zou ik een melding willen
 

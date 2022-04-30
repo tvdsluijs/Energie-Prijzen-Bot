@@ -1,4 +1,5 @@
 from ast import Constant
+import code
 import os
 import telegram
 from time import time
@@ -26,41 +27,47 @@ class Telegram_Functions(object):
 
             self.dontunderstand_text = "Sorry, ik heb je niet begrepen, zocht je naar /hulp ?"
 
+            self.commando_hulp = """
+
+Je hebt de volgende commando's tot je beschikking:
+
+/voegmetoe → Je chat-id toevoegen
+/verwijderme → Je chat-id verwijderen
+/mijnid → Je chat-id tonen
+/nu → huidige prijzen dit uur
+/vandaag → prijzen van vandaag
+/morgen → prijzen van morgen (na 15.00)
+/laag → Laagste prijzen van vandaag
+/hoog → Hoogste prijzen van vandaag
+/system → Wat systeem gegevens"""
+
             self.help_tekst = """
-Let op! Alle energie bedragen zijn de kale inkoopsprijzen.
-Dus zonder opslag, BTW en belastingen.
+Let op: alle bedragen zijn kale inkoopprijzen, dus zonder opslag, BTW en belastingen.
 
-Er zijn de volgende commando's tot je beschikking
+Voor overzicht van alle /commandos.
 
-/voegmetoe -> voegt je chat-ID toe
-/verwijderme -> verwijdert je chat-ID
-/mijnid -> toont je chat-ID
-/nu -> toont huidige prijzen
-/vandaag -> toont de prijzen van vandaag
-/morgen -> toont u de prijzen van morgen (na 15.00 uur)
-/laag -> toont de laagste prijzen van vandaag
-/hoog -> toont de hoogste prijzen van vandaag
-
-Als je een /voegmetoe doet, ontvang je:
-- dagelijks rond 15:00 uur de laagste prijzen voor morgen;
-- voordat de laagste prijs van de dag begint een bericht;
+/voegmetoe voor automatische berichten:
+- de laagste prijzen van morgen;
+- bericht voordat laagste prijs begint;
 - informatie over prijzen onder 0.
 
-Vergeet niet te doneren!!
+Vergeet niet te doneren
 /doneer
 
-Vragen? Mail naar info@itheo.tech
+Vragen?
+Mail naar info@itheo.tech
 """
+
             self.admin_help = """
 
-            Dit is de Amind help
-            /fill -> vul de database met historische data
-            /listids -> lijst met aangemelde personen
-            /onderhoud aan -> stuur iedereen een onderhoud bericht
-            /onderhoud uit -> stuur iedereen een onderhoud bericht
-            /system -> wat systeem informatie
-            /nexthourminus -> is there a minus price next hour
-            /tomorrowminus -> tomorrows 0 and below prices
+Dit is de Admin help
+/fill → vul de database met historische data
+/listids → lijst met aangemelde personen
+/onderhoud aan → stuur iedereen een onderhoud bericht
+/onderhoud uit → stuur iedereen een onderhoud bericht
+/system → wat systeem informatie
+/nexthourminus → is there a minus price next hour
+/tomorrowminus → tomorrows 0 and below prices
             """
             self.dates_hour = []
 
@@ -72,17 +79,44 @@ Vragen? Mail naar info@itheo.tech
 
     def start_me_up(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            msg = """Welkom bij de Energie prijzen bot!\n""" + self.help_tekst
+            first_name = update.message.chat.first_name
+            username = update.message.chat.username
 
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            if first_name is None or first_name == "":
+                name = username
+            else:
+                name = username
+
+            msg = f"""Beste {name},
+welkom bij de Energie prijzen bot
+{self.help_tekst}
+"""
+
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='Markdown')
         except Exception as e:
             log.error(e)
 
-
+    def commandos(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            context.bot.send_message(chat_id=update.message.chat_id, text=self.commando_hulp, parse_mode='Markdown')
+        except Exception as e:
+            log.error(e)
     def help_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            msg = """Ik ben hier om je te helpen!\n""" + self.help_tekst
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            first_name = update.message.chat.first_name
+            username = update.message.chat.username
+
+            if first_name is None or first_name == "":
+                name = username
+            else:
+                name = username
+
+            msg = f"""Hoi {name},
+ik ben hier om je te helpen
+{self.help_tekst}
+"""
+            # msg = telegram.utils.helpers.escape_markdown(msg, 2)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='Markdown')
         except Exception as e:
             log.error(e)
 
@@ -147,7 +181,7 @@ Vragen? Mail naar info@itheo.tech
         except Exception as e:
             log.error(e)
 
-    def get_users(self)->list:
+    def get_users(self) -> list:
         try:
             esql = EnergiePrijzen_SQL(dbname=self.dbname)
             ids = []
@@ -203,7 +237,7 @@ Vragen? Mail naar info@itheo.tech
                 case 0:
                     msg = f"Jouw user chat id ({update.message.chat_id}) is niet gevonden, dus verwijderen kan niet!"
                 case 1:
-                    msg = f"Jouw user chat id ({update.message.chat_id}) is verwijdert! Je ontvangt nu geen energie prijzen meer!"
+                    msg = f"Jouw user chat id ({update.message.chat_id}) is verwijdert! Je ontvangt nu geen automatische energie updates!"
                 case -1:
                     msg = f"Ai... we hebben een probleem om jouw user chat id ({update.message.chat_id}) te verwijderen. Probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft."
 
@@ -224,7 +258,7 @@ Vragen? Mail naar info@itheo.tech
             EP.set_dates()
             msg = EP.get_todays_prices(date=EP.today)
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
 
@@ -233,10 +267,10 @@ Vragen? Mail naar info@itheo.tech
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             if int(EP.current_hour_short) < 15:
-                msg = "Sorry, het is nog geen 15uur geweest!"
+                msg = """Prijzen van morgen zijn pas na 15u beschikbaar"""
             else:
                 msg = EP.get_todays_prices(date=EP.enddate)
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
 
@@ -246,7 +280,7 @@ Vragen? Mail naar info@itheo.tech
             EP.set_dates()
             msg = EP.get_cur_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
 
@@ -256,7 +290,7 @@ Vragen? Mail naar info@itheo.tech
             EP.set_dates()
             msg = EP.get_todays_highest_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
 
@@ -266,7 +300,7 @@ Vragen? Mail naar info@itheo.tech
             EP.set_dates()
             msg = EP.get_todays_lowest_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
 
@@ -278,7 +312,7 @@ Vragen? Mail naar info@itheo.tech
             EP.set_dates()
             msg = EP.get_tomorrows_minus_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
 
@@ -288,7 +322,7 @@ Vragen? Mail naar info@itheo.tech
             EP.set_dates()
             msg = EP.get_next_hour_lowest_price()
             EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
 
@@ -296,23 +330,25 @@ Vragen? Mail naar info@itheo.tech
     def systeminfo(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             msg = self.dontunderstand_text
-            if int(update.message.chat_id) in self.admin_ids:
-                versie_path = os.path.join(self.path, "VERSION.TXT")
-                version = open(versie_path, "r").read()
-                dbsize = self.fileSize(self.dbname)
-                seconds = int(time() - self.startTime)
-                uptime = self.secondsToText(seconds)
-                msg = f"""
+            # if int(update.message.chat_id) in self.admin_ids:
+            versie_path = os.path.join(self.path, "VERSION.TXT")
+            version = open(versie_path, "r").read().replace('\n','')
+            dbsize = self.fileSize(self.dbname)
+            seconds = int(time() - self.startTime)
+            uptime = self.secondsToText(seconds)
+            ids = self.get_users()
+            msg = f"""
 
 Hier is wat systeem informatie:
-
-De bot is versie {version}
-De database is op dit moment  {dbsize}
-
-Het systeem draait nu voor  {uptime}
+```
+Bot versie: {version}
+Database :  {dbsize}
+Uptime :    {uptime}
+Users :     {len(ids)}
+```
 """
 
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
 
         except Exception as e:
             log.error(e)

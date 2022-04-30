@@ -34,6 +34,9 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             start_handler = CommandHandler('start', self.start_me_up)
             u.dispatcher.add_handler(start_handler)
 
+            commando_handler = CommandHandler('commandos', self.commandos)
+            u.dispatcher.add_handler(commando_handler)
+
             helpme_handler = CommandHandler('help', self.help_me)
             u.dispatcher.add_handler(helpme_handler)
 
@@ -58,15 +61,15 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             donate_handler = CommandHandler('doneer', self.donate)
             u.dispatcher.add_handler(donate_handler)
 
+            system_handler = CommandHandler('system', self.systeminfo)
+            u.dispatcher.add_handler(system_handler)
+
             # admin handlers
             filldb_handler = CommandHandler('fill', self.fill_db)
             u.dispatcher.add_handler(filldb_handler)
 
             listids_handler = CommandHandler('listids', self.list_ids)
             u.dispatcher.add_handler(listids_handler)
-
-            system_handler = CommandHandler('system', self.systeminfo)
-            u.dispatcher.add_handler(system_handler)
 
             onderhoud_handler = CommandHandler('onderhoud', self.onderhoud)
             u.dispatcher.add_handler(onderhoud_handler)
