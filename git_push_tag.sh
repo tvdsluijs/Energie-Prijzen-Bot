@@ -1,8 +1,11 @@
 #!/bin/bash
 
-TAG_NAME=$(cat src/VERSION.TXT)
+versie=$(cat src/VERSION.TXT)
 
-echo 'De huidige versie is' ${TAG_NAME}
+echo 'Geef een omschrijving:'
+read omschrijving
+
+echo 'De huidige versie is' ${versie}
 echo 'Geef de nieuwe versie op:'
 read nieuwnummer
 
@@ -11,5 +14,21 @@ echo ${nieuwnummer} > src/VERSION.TXT
 echo 'Versie opgeslagen!'
 
 git add .
-git commit -m "$*"
+git commit -m "${omschrijving}"
 git push
+
+read -r -p "Tag deze commit? [Y/n] " input
+
+case $input in
+      [yY][eE][sS]|[yY])
+            git tag ${nieuwnummer} -a -m "${omschrijving}"
+            git push origin --tags
+            ;;
+      [nN][oO]|[nN])
+            echo "Okay, dan zijn we klaar"
+            ;;
+      *)
+            echo "Foute invoer, sorry."
+            exit 1
+            ;;
+esac

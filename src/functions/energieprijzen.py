@@ -259,11 +259,11 @@ Laagste prijs van {self.get_nice_day(date=date)}"""
                 for d in data:
                     if d['price'] <= 0:
                         price = self.dutch_floats(price=d['price'])
-                        msg_elec += f"""⚡ {d['fromtime']} {price}\n"""
+                        msg_elec += f"""{d['fromtime']} {price}\n"""
             if msg_elec != "":
                 # {self.get_nice_day(date=date)}
                 msg = f"""
-Morgen gaan we onder 0 euro
+Morgen gaat ⚡ onder 0
 ```
 {msg_elec}```"""
                 return msg
