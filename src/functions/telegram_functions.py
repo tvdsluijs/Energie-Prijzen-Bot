@@ -26,7 +26,7 @@ class Telegram_Functions(object):
             self.startTime = kwargs['startTime']
 
             self.date_hours = []
-            self.dontunderstand_text = "Sorry, ik heb je niet begrepen, zocht je naar /hulp ?"
+            self.dontunderstand_text = """Sorry, ik heb je niet begrepen."""
 
             self.commando_hulp = """
 
@@ -189,7 +189,7 @@ ik ben hier om je te helpen
 
     def blahblah(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            msg = "Sorry, ik werk alleen met commando's, zoek je /hulp ?"
+            msg = self.dontunderstand_text + self.commando_hulp
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
@@ -197,7 +197,7 @@ ik ben hier om je te helpen
     def dontunderstand(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         # https://blog.finxter.com/python-telegram-bot/
         try:
-            msg = self.dontunderstand_text
+            msg = self.dontunderstand_text + self.commando_hulp
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
@@ -322,7 +322,7 @@ ik ben hier om je te helpen
 
     def systeminfo(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            msg = self.dontunderstand_text
+            msg = self.dontunderstand_text + self.commando_hulp
             # if int(update.message.chat_id) in self.admin_ids:
             versie_path = os.path.join(self.path, "VERSION.TXT")
             version = open(versie_path, "r").read().replace('\n','')
@@ -330,14 +330,19 @@ ik ben hier om je te helpen
             seconds = int(time() - self.startTime)
             uptime = self.secondsToText(seconds)
             ids = self.get_users()
+            EP = EnergiePrijzen(dbname=self.dbname)
+            EP.set_dates()
+            dt = EP.current_date_time
+            EP = None
             msg = f"""
 
 Hier is wat systeem informatie:
 ```
-Bot versie: {version}
-Database :  {dbsize}
-Uptime :    {uptime}
-Users :     {len(ids)}
+System time: {dt}
+Bot versie:  {version}
+Database :   {dbsize}
+Uptime :     {uptime}
+Users :      {len(ids)}
 ```
 """
 
@@ -348,7 +353,7 @@ Users :     {len(ids)}
 
     def list_ids(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            msg = self.dontunderstand_text
+            msg = self.dontunderstand_text + self.commando_hulp
             if int(update.message.chat_id) in self.admin_ids:
                 ids = self.get_users()
                 msg = f"Here's the list of ids you requested!\n {str(ids)}"
@@ -378,7 +383,8 @@ Ik begrijp je niet, het commando is
                     context.bot.send_message(chat_id=id, text=msg)
 
             else:
-                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand_text)
+                msg = self.dontunderstand_text + self.commando_hulp
+                context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
@@ -399,7 +405,8 @@ Ik begrijp je niet, het commando is
                 EP = None
                 context.bot.send_message(chat_id=update.message.chat_id, text=f"Databases filled!!\n")
             else:
-                context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand_text)
+                msg = self.dontunderstand_text + self.commando_hulp
+                context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 

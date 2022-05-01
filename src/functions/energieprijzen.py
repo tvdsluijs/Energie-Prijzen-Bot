@@ -32,6 +32,7 @@ class EnergiePrijzen():
         self.startdate = None
         self.enddate = None
         self.current_hour = None
+        self.current_date_time = None
         self.next_hour = None
         self.lowest_electricity = None
         self.highest_electricity = None
@@ -80,6 +81,7 @@ class EnergiePrijzen():
 
             self.next_hour = datetime.now() + timedelta(hours=+1)
             self.next_hour = self.next_hour.strftime("%H:00")
+            self.current_date_time = self.now.strftime("%Y-%m-%d %H:%M")
 
         except Exception as e:
             log.error(e)
@@ -116,7 +118,7 @@ class EnergiePrijzen():
             start = datetime.strptime(startdate, "%Y-%m-%d")
 
             while start <= now:
-                # Get data
+                # Get datax
                 data = self.get_energyzero_data(startdate=startdate,enddate=enddate, kind=kind)
                 # Save data
                 self.save_data(data=data, kind=kind)
