@@ -13,9 +13,11 @@ echo 'Nieuwe versie:' ${nieuwnummer}
 echo ${nieuwnummer} > src/VERSION.TXT
 echo 'Versie opgeslagen!'
 
-datum = date +"%dth %B, %Y"
+# datum = date +"%dth %B, %Y"
+datum=$( date '+%dth %B, %Y' )
 
 sed -i '' "/Versiegeschiedenis/ a\\
+\\
 ${datum} - versie: ${nieuwnummer} \\
 - ${omschrijving} \\
 " README.md

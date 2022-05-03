@@ -31,6 +31,9 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             removeme_handler = CommandHandler('verwijderme', self.remove_me)
             u.dispatcher.add_handler(removeme_handler)
 
+            ochtend_handler = CommandHandler('ochtend', self.ochtend)
+            u.dispatcher.add_handler(ochtend_handler)
+
             start_handler = CommandHandler('start', self.start_me_up)
             u.dispatcher.add_handler(start_handler)
 

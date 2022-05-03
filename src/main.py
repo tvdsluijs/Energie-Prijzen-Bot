@@ -12,9 +12,6 @@ from functions.energieprijzen_sql import EnergiePrijzen_SQL
 from functions.energieprijzen import EnergiePrijzen
 
 os.environ['TZ'] = 'Europe/Amsterdam'
-# setlocale(LC_ALL,'nl_NL')
-# setlocale(LC_NUMERIC, 'nl_NL')
-# setlocale(LC_MONETARY, 'nl_NL')
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 log_folder = os.path.join(dir_path, 'logging')
@@ -40,6 +37,7 @@ class EnergieBot():
             self.config = None
             self.admin_ids = None
             self.telegram_key = None
+            self.entsoe_key = None
             self.initConfig()
             self.readConfig()
         except Exception as e:
@@ -65,7 +63,7 @@ class EnergieBot():
             admin_ids = self.config['telegram']['admin_ids'].split(',')
             self.admin_ids = [int(i) for i in admin_ids]
             self.telegram_key = self.config['telegram']['key']
-            self.entsoe_key =  self.config['entsoe']['key']
+            self.entsoe_key = self.config['entsoe']['key']
         except KeyError as e:
             log.critical(e)
         except Exception as e:
@@ -87,7 +85,7 @@ if __name__ == "__main__":
             esql.add_user(user_id=int(id))
     esql = None
     path = os.path.dirname(os.path.realpath(__file__))
-    TE = Telegram_EnergiePrijzen(dbname=dbname,admin_ids=eb.admin_ids,telegram_key=eb.telegram_key, path=path, startTime=startTime)
+    TE = Telegram_EnergiePrijzen(dbname=dbname,admin_ids=eb.admin_ids,telegram_key=eb.telegram_key,entsoe_key=eb.entsoe_key, path=path, startTime=startTime)
     TE.start_telegram()
 
 

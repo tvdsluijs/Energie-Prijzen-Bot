@@ -1,12 +1,16 @@
-from ast import Constant
-import code
+
 import os
-import telegram
+import psutil
+from datetime import datetime
 from time import time
+
+from ast import Constant
+
+import telegram
+
 from telegram.ext import Updater, CommandHandler
 from functions.energieprijzen import EnergiePrijzen
 from functions.energieprijzen_sql import EnergiePrijzen_SQL
-from datetime import datetime
 
 import logging
 
@@ -24,6 +28,7 @@ class Telegram_Functions(object):
             self.admin_ids = kwargs['admin_ids']
             self.path = kwargs['path']
             self.startTime = kwargs['startTime']
+            self.entsoe_key = kwargs['entsoe_key']
 
             self.date_hours = []
             self.dontunderstand_text = """Sorry, ik heb je niet begrepen."""
@@ -147,11 +152,25 @@ ik ben hier om je te helpen
             EP.set_dates()
 
             #stroom = 1, gas 2 2
-            for sg in [1,2]:
-                data = EP.get_energyzero_data(kind=sg)
-                EP.save_data(data=data, kind=sg)
+            # for sg in [1,2]:
+            # Gas ophalen bij ernergyzero
+            if (data := EP.get_energyzero_data(kind=2)):
+                EP.save_data(data=data, kind=2)
+
+            # Electra ophalen bij entsoe
+            if (data := EP.get_entsoe_data(entsoe_key=self.entsoe_key)):
+                EP.save_data(data=data, kind=1)
+            #wanneer er geen data is dan bij energyzero ophalen.
+            elif (data := EP.get_energyzero_data(kind=1)):
+                EP.save_data(data=data, kind=1)
 
             cur_hour = int(now.strftime("%H"))
+            if cur_hour == 8:
+                # om 8 uur melding voor
+                "Vandaag is de inkoopprijs van stroom per kWh het laagst tussen {} en {} (€ {}) en het hoogst tussen {} en {} (€ {})."
+                pass
+
+
             if cur_hour not in [23,0,1,2,3,4,5,6]:
                 ids = self.get_users()
                 # if (msg := EP.get_next_hour_lowest_price()):
@@ -219,6 +238,19 @@ ik ben hier om je te helpen
         except Exception as e:
             log.error(e)
 
+    def ochtend(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            if context.args[0] == 'aan':
+                # toevoegen ochtend aan bij id
+                # update.message.chat_id
+                pass
+            elif context.args[0] == 'uit':
+                # verwijderen ochtend aan bij id
+                # update.message.chat_id
+                pass
+        except Exception as e:
+            log.error(e)
+
     def remove_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             esql = EnergiePrijzen_SQL(dbname=self.dbname)
@@ -262,7 +294,7 @@ ik ben hier om je te helpen
             if int(EP.current_hour_short) < 15:
                 msg = """Prijzen van morgen zijn pas na 15u beschikbaar"""
             else:
-                msg = EP.get_todays_prices(date=EP.enddate)
+                msg = EP.get_todays_prices(date=EP.tomorrow)
             context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
         except Exception as e:
             log.error(e)
@@ -319,33 +351,29 @@ ik ben hier om je te helpen
         except Exception as e:
             log.error(e)
 
-
     def systeminfo(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            msg = self.dontunderstand_text + self.commando_hulp
-            # if int(update.message.chat_id) in self.admin_ids:
             versie_path = os.path.join(self.path, "VERSION.TXT")
             version = open(versie_path, "r").read().replace('\n','')
-            dbsize = self.fileSize(self.dbname)
             seconds = int(time() - self.startTime)
-            uptime = self.secondsToText(seconds)
-            ids = self.get_users()
+
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             dt = EP.current_date_time
             EP = None
             msg = f"""
 
-Hier is wat systeem informatie:
+Systeem informatie:
 ```
-System time: {dt}
-Bot versie:  {version}
-Database :   {dbsize}
-Uptime :     {uptime}
-Users :      {len(ids)}
+System time : {dt}
+Bot version : {version}
+Database :    {self.fileSize(self.dbname)}
+Uptime :      {self.secondsToText(seconds)}
+Users :       {len(self.get_users())}
+CPU load :    {self.get_cpu_usage_pct()}%
+RAM usage:    {int(self.get_ram_usage() / 1024 / 1024)} MB
 ```
 """
-
             context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
 
         except Exception as e:
@@ -356,7 +384,7 @@ Users :      {len(ids)}
             msg = self.dontunderstand_text + self.commando_hulp
             if int(update.message.chat_id) in self.admin_ids:
                 ids = self.get_users()
-                msg = f"Here's the list of ids you requested!\n {str(ids)}"
+                msg = f"Hier is een lijst met ID's \n {str(ids)}"
 
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
@@ -437,6 +465,14 @@ Ik begrijp je niet, het commando is
             log.error(e)
 
     @staticmethod
+    def get_ram_usage():
+        return int(psutil.virtual_memory().total - psutil.virtual_memory().available)
+
+    @staticmethod
+    def get_cpu_usage_pct():
+        return psutil.cpu_percent(interval=0.5)
+
+    @staticmethod
     def secondsToText(unit, granularity = 2):
         try:
             ratios = {
@@ -462,7 +498,7 @@ Ik begrijp je niet, het commando is
             text = ', '.join(texts)
             if len(texts) > 1:
                 index = text.rfind(',')
-                text = f'{text[:index]} and {text[index + 1:]}'
+                text = f'{text[:index]}, {text[index + 1:]}'
             return text
         except Exception as e:
             log.error(e)

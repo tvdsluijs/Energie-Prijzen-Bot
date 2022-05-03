@@ -1,5 +1,5 @@
 from ast import Constant
-import os
+import os, sys
 import json
 import requests
 import logging
@@ -8,7 +8,12 @@ from datetime import datetime, timedelta
 from dateutil import parser, tz
 
 from time import sleep
+
+from telegram import PassportElementError
 from functions.energieprijzen_sql import EnergiePrijzen_SQL
+
+from entsoe import EntsoePandasClient
+import pandas as pd
 
 PY_ENV = os.getenv('PY_ENV', 'dev')
 log = logging.getLogger(PY_ENV)
@@ -28,39 +33,40 @@ class EnergiePrijzen():
         self.now = None
         self.yesterday = None
         self.tomorrow = None
-        self.dayaftertomorrow = None
-        self.startdate = None
-        self.enddate = None
         self.current_hour = None
         self.current_date_time = None
         self.next_hour = None
+        self.current_hour_short = None
         self.lowest_electricity = None
         self.highest_electricity = None
-        self.lowest_time = None
-        self.current_hour_short = None
+
         self.prices = {}
         self.foutmelding = "🚧 Great Scott 🚧 \n Je bent tegen een fout aangelopen"
+
         self.morgen = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00']
         self.middag = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
-
 
         self.weekdays = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag']
         self.months = ['', 'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
         self.nice_day = None #net uitgeschreven dag donderdag 22 april
 
     @staticmethod
-    def get_timestamp(time_stamp:str = "")->dict:
+    def get_timestamp(time_stamp:str = "", UTC:bool = True)->dict:
         try:
-            from_zone = tz.gettz('UTC')
-            to_zone = tz.gettz('CET')
+            if UTC:
+                from_zone = tz.gettz('UTC')
+                to_zone = tz.gettz('CET')
 
-            d = parser.parse(time_stamp)
+                d = parser.parse(time_stamp)
 
-            utc = d.replace(tzinfo=from_zone)
-            cet = utc.astimezone(to_zone)
+                utc = d.replace(tzinfo=from_zone)
+                cet = utc.astimezone(to_zone)
 
-            datum = cet.strftime('%Y-%m-%d')  #==> '1975-05-14'
-            tijd = cet.strftime('%H:00')  #==> '18:00'
+                datum = cet.strftime('%Y-%m-%d')  #==> '1975-05-14'
+                tijd = cet.strftime('%H:00')  #==> '18:00'
+            else:
+                datum = time_stamp.strftime('%Y-%m-%d')  #==> '1975-05-14'
+                tijd = time_stamp.strftime('%H:00')  #==> '18:00'
 
             return {'datum': datum, 'tijd': tijd}
         except Exception as e:
@@ -69,18 +75,19 @@ class EnergiePrijzen():
     def set_dates(self)->None:
         try:
             self.now = datetime.now()
-            self.yesterday = datetime.now() + timedelta(days=-1)
-            self.tomorrow = datetime.now() + timedelta(days=+1)
+
+            yesterday_ts = self.now + timedelta(days=-1)
+            tomorrow_ts = self.now + timedelta(days=+1)
+            next_hour_ts = self.now + timedelta(hours=+1)
 
             self.today = self.now.strftime("%Y-%m-%d")
-            self.startdate = self.yesterday.strftime("%Y-%m-%d")
-            self.enddate = self.tomorrow.strftime("%Y-%m-%d")
+            self.yesterday = yesterday_ts.strftime("%Y-%m-%d")
+            self.tomorrow = tomorrow_ts.strftime("%Y-%m-%d")
 
             self.current_hour = self.now.strftime("%H:00")
             self.current_hour_short = int(self.now.strftime("%H"))
 
-            self.next_hour = datetime.now() + timedelta(hours=+1)
-            self.next_hour = self.next_hour.strftime("%H:00")
+            self.next_hour = next_hour_ts.strftime("%H:00")
             self.current_date_time = self.now.strftime("%Y-%m-%d %H:%M")
 
         except Exception as e:
@@ -91,12 +98,48 @@ class EnergiePrijzen():
         next_hour = datetime.now() + timedelta(hours=+hours)
         return next_hour.strftime("%H:00")
 
+    def get_entsoe_data(self, startdate:str = "", enddate:str = "", entsoe_key:str=None)->json:
+        try:
+            if entsoe_key is None or entsoe_key == "":
+                raise Exception("We don't have a entsoe key")
+            if startdate == "":
+                yesterday = datetime.now() + timedelta(days=-1)
+                periodStart = yesterday.strftime("%Y%m%d0001") #yyyyMMddHHmm
+            if enddate == "":
+                tomorrow = datetime.now() + timedelta(days=+1)
+                periodEnd = tomorrow.strftime("%Y%m%d2359") #yyyyMMddHHmm
+
+            startdate = pd.Timestamp(periodStart, tz='Europe/Brussels')
+            enddate = pd.Timestamp(periodEnd, tz='Europe/Brussels')
+            data = {}
+            client = EntsoePandasClient(api_key=entsoe_key)
+
+            country_code = 'NL'
+            ts = client.query_day_ahead_prices(country_code,start=startdate,end=enddate)
+            lines = []
+            table = ts.to_dict()
+
+            for k,v in table.items():
+                dt = pd.to_datetime(k)
+
+                # datum_tijd = dt.strftime("%Y-%m-%dT%H:%M:00+0200")
+                kwh_p = float(v/1000)
+                lines.append({'price': kwh_p, 'readingDate': dt, 'UTC': False})
+            if lines is None:
+                return False
+
+            data['Prices'] = lines
+            return data
+        except Exception as e:
+            log.error(e)
+            return False
+
     def get_energyzero_data(self, startdate:str = "", enddate:str = "",kind:str = ENERGIE.value)->json:
         try:
             if startdate == "":
-                startdate = self.startdate
+                startdate = self.yesterday
             if enddate == "":
-                enddate = self.enddate
+                enddate = self.tomorrow
             # interval=4 => dag
             # interval=9 => Week
             # interval=5 => Maand
@@ -109,15 +152,16 @@ class EnergiePrijzen():
             return data
         except KeyError as e:
             log.warning(f"We did not get data from energyzero api : {e}")
+            return False
         except Exception as e:
             log.error(e)
+            return False
 
     def get_history(self, startdate:str = "2017-01-01", enddate:str = "2017-01-02", kind:int = 1)->None:
         try:
-            now = datetime.now()
             start = datetime.strptime(startdate, "%Y-%m-%d")
 
-            while start <= now:
+            while start <= self.now:
                 # Get datax
                 data = self.get_energyzero_data(startdate=startdate,enddate=enddate, kind=kind)
                 # Save data
@@ -155,9 +199,17 @@ class EnergiePrijzen():
                 case _:
                     raise Exception('No correct power kind')
 
+
             for row in data['Prices']:
                 prices = {}
-                efrom = self.get_timestamp(row['readingDate'])
+                #the entsoe price-timestamps as Europe/Amsterdam
+                try:
+                    UTC = row['UTC']
+                except KeyError:
+                    # the enerzyzero json does not have a UTC key so we set it on true
+                    UTC = True
+
+                efrom = self.get_timestamp(time_stamp=row['readingDate'],UTC=UTC)
                 prices['fromdate'] = efrom['datum']
                 prices['fromtime'] = efrom['tijd']
                 prices['price'] =  row['price']
@@ -254,7 +306,7 @@ Laagste prijs van {self.get_nice_day(date=date)}"""
 
     def get_tomorrows_minus_price(self)->str:
         try:
-            date = self.enddate
+            date = self.tomorrow
             data = self.get_prices(date=date, kind='e')
             msg_elec = ""
             if data is not None:
@@ -391,9 +443,8 @@ Morgen gaat ⚡ onder 0
 
             return f"""
 Prijzen {elect['fromtime']}\-{self.next_hour}
-```
 ⚡ {elect_price}
-🔥 {gas_price}```"""
+🔥 {gas_price}"""
 
         except Exception as e:
             log.error(e)
@@ -418,21 +469,22 @@ Prijzen {elect['fromtime']}\-{self.next_hour}
             log.error(e)
             return self.foutmelding
 
-
     def get_todays_prices(self, date:str = None)->str:
         try:
             if date is None:
-                date = self.tomorrow.strftime("%Y-%m-%d")
-            esql = EnergiePrijzen_SQL(dbname=self.dbname )
+                date = self.morgen
+            esql = EnergiePrijzen_SQL(dbname=self.dbname)
             esql.connection()
             data = esql.get_prices(date=date)
-            msg_elect = f"{self.get_nice_day(date=date)}\nPrijzen ⚡"
+            msg_elect = f"""{self.get_nice_day(date=date)}
+Prijzen ⚡"""
             msg_gas =  f"Prijzen 🔥"
             gas_voor = ""
             gas_na = ""
             elec = ""
             msg = ""
             electra = {}
+
             for v in data:
                 if v['kind'] == 'e':
                     price = self.dutch_floats(price=v['price'])
@@ -441,10 +493,10 @@ Prijzen {elect['fromtime']}\-{self.next_hour}
                     tijd = int(v['fromtime'][:-3])
                     if tijd <= 5:
                         price = self.dutch_floats(price=v['price'])
-                        gas_voor = f"tot 06:00\t{price}"
+                        gas_voor = f"tot 06:00 {price}"
                     else:
                         price = self.dutch_floats(price=v['price'])
-                        gas_na = f"na \t06:00\t{price}"
+                        gas_na = f"na 06:00 {price}"
 
             for index,item in enumerate(self.morgen):
                 elec += f"{self.morgen[index]} {electra[self.morgen[index]]}  {self.middag[index]} {electra[self.middag[index]]}\n"
@@ -457,6 +509,8 @@ Prijzen {elect['fromtime']}\-{self.next_hour}
 {gas_voor}
 {gas_na}```"""
             return msg
+        except KeyError as e:
+            log.error(f"Key niet gevonden in electra {e}")
         except Exception as e:
             log.error(e)
             return self.foutmelding

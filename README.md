@@ -89,8 +89,12 @@ info@itheo.tech
 [Theo van der Sluijs](https://itheo.tech)
 
 ## Versiegeschiedenis
- - versie: 1.1.1 
-- Paar kleine verbeteringen  system time toegevoegd in /system  wanneer de bot je niet snapt krijg je de bruikbare commandos te zien  in git_push_tag verandert hij nu ook de readme met versie gegevens 
+
+03th mei, 2022 - versie: 1.2.0 
+- Koppeling gemaakt met entsoe voor 3 cijfers achter komma prijzen, meer system informatie en wat kleine layout aanpassingen. 
+
+Mei 1 2022 - versie: 1.1.1
+- Paar kleine verbeteringe, system time toegevoegd in /system, wanneer de bot je niet snapt krijg je de bruikbare commandos te zien, in git_push_tag verandert hij nu ook de readme met versie gegevens
 
 Apr 30 2022
 - Docker slim anders ingericht met Europe/Amsterdam timezone

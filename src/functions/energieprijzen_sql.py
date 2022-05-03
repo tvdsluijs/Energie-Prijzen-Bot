@@ -52,12 +52,12 @@ class EnergiePrijzen_SQL():
 
     def no_table(self, table:str = None)->bool:
         try:
-            self.connection()
             sql = ""
             if table == 'user':
                 sql = """ CREATE TABLE IF NOT EXISTS users (
-                                            user_id INT PRIMARY KEY,
-                                            datetime INT
+                                            user_id INTEGER PRIMARY KEY,
+                                            datetime INTEGER,
+                                            ochtend  INTEGER
                                         ); """
 
             if table == "energy":
@@ -70,10 +70,12 @@ class EnergiePrijzen_SQL():
                         ); """
             if sql != "":
                 self.create_table(create_table_sql=sql)
+                return True
             else:
                 raise Exception("There is no SQL to run!!")
         except Exception as e:
             log.error(e)
+            return False
 
     def create_table(self, create_table_sql:str=None)->None:
         try:
@@ -84,7 +86,7 @@ class EnergiePrijzen_SQL():
             cur = self.conn.cursor()
             cur.execute(create_table_sql)
             self.conn.commit()
-
+            return True
         except Exception as e:
             log.error(f'Cannot create table: {e}, {create_table_sql}')
             sys.exit(f'Cannot create table: {e}, {create_table_sql}')
@@ -257,6 +259,64 @@ Group by fromdate );"""
         except Error as e:
             log.error(e)
             return False
+
+    def change_table(self)->bool:
+        try:
+            self.connection()
+
+            addColumn = "ALTER TABLE users ADD COLUMN ochtend INTEGER"
+            cur = self.conn.cursor()
+            cur.execute(addColumn)
+
+            addColumn = "ALTER TABLE users ADD COLUMN opslag DOUBLE"
+            cur = self.conn.cursor()
+            cur.execute(addColumn)
+
+            addColumn = "ALTER TABLE users ADD COLUMN melding_lager_dan DECIMAL 0.0001"
+            cur = self.conn.cursor()
+            cur.execute(addColumn)
+
+            addColumn = "ALTER TABLE users ADD COLUMN melding_hoger_dan DECIMAL"
+            cur = self.conn.cursor()
+            cur.execute(addColumn)
+
+            sql = """
+PRAGMA foreign_keys = 0;
+
+CREATE TABLE sqlitestudio_temp_table AS SELECT *
+                                          FROM users;
+
+DROP TABLE users;
+
+CREATE TABLE users (
+    user_id           INT     PRIMARY KEY,
+    datetime          INT,
+    ochtend           INTEGER,
+    opslag            DOUBLE,
+    melding_lager_dan DECIMAL 0.001,
+    melding_hoger_dan DECIMAL
+);
+
+INSERT INTO users (
+                      user_id,
+                      datetime
+                  )
+                  SELECT user_id,
+                         datetime
+                    FROM sqlitestudio_temp_table;
+
+DROP TABLE sqlitestudio_temp_table;
+
+PRAGMA foreign_keys = 1;
+"""
+
+            self.create_table(create_table_sql=sql)
+            return True
+        except Exception as e:
+            log.error(e)
+            return False
+
+
 
 
 if __name__ == "__main__":
