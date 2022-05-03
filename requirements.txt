@@ -6,9 +6,11 @@ cffi==1.15.0
 charset-normalizer==2.0.12
 entsoe-py==0.5.4
 idna==3.3
+lxml==4.8.0
 numpy==1.22.3
 packaging==21.3
 pandas==1.4.2
+psutil==5.9.0
 pycparser==2.21
 pyparsing==3.0.8
 python-dateutil==2.8.2
