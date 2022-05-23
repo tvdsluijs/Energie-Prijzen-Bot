@@ -1,6 +1,6 @@
 # Energie Prijzen Bot
 
-Deze repo is geachtiveerd!
+Deze repo is gearchiveerd!
 
 Ga naar
 
@@ -8,7 +8,7 @@ https://github.com/tvdsluijs/Energie-Prijzen-Bot-2.0
 
 Voor de nieuwste versie!
 
-====
+# == This repo is deprecated ==
 
 Een Telegram bot die de dagelijkse actuele inkoop energie prijzen verwerkt en toont.
 
