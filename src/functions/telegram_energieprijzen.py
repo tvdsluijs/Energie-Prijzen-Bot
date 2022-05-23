@@ -1,6 +1,6 @@
 import os
-import telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler
+# import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, ConversationHandler,CallbackQueryHandler
 from functions.telegram_functions import Telegram_Functions
 from telegram.ext.filters import Filters
 
@@ -10,7 +10,6 @@ PY_ENV = os.getenv('PY_ENV', 'dev')
 log = logging.getLogger(PY_ENV)
 
 class Telegram_EnergiePrijzen(Telegram_Functions):
-
     def __init__(self,*args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -19,32 +18,26 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             u = Updater(self.telegram_key, use_context=True)
             j = u.job_queue
 
-            # run every hour
-            job_minute = j.run_repeating(self.call_energiebot, interval=60, first=2) #iedere minuut
+            # run every minute
+            job_minute = j.run_repeating(self.call_energiebot, interval=60, first=1) #iedere minuut
 
-            get_id_handler = CommandHandler('mijnid',self.get_id)
-            u.dispatcher.add_handler(get_id_handler)
+            user_handler = CommandHandler(['u','user'], self.user)
+            u.dispatcher.add_handler(user_handler)
 
-            addme_handler = CommandHandler('voegmetoe', self.add_me)
-            u.dispatcher.add_handler(addme_handler)
+            # admin handler
+            admin_handler = CommandHandler(['a', 'admin'], self.admin)
+            u.dispatcher.add_handler(admin_handler)
 
-            removeme_handler = CommandHandler('verwijderme', self.remove_me)
-            u.dispatcher.add_handler(removeme_handler)
+            u.dispatcher.add_handler(CallbackQueryHandler(self.button_press))
+
+            prijs_handler = CommandHandler(['p','prijs', 'prijzen'], self.prijs)
+            u.dispatcher.add_handler(prijs_handler)
 
             ochtend_handler = CommandHandler('ochtend', self.ochtend)
             u.dispatcher.add_handler(ochtend_handler)
 
             start_handler = CommandHandler('start', self.start_me_up)
             u.dispatcher.add_handler(start_handler)
-
-            commando_handler = CommandHandler('commandos', self.commandos)
-            u.dispatcher.add_handler(commando_handler)
-
-            helpme_handler = CommandHandler('help', self.help_me)
-            u.dispatcher.add_handler(helpme_handler)
-
-            hulpme_handler = CommandHandler('hulp', self.help_me)
-            u.dispatcher.add_handler(hulpme_handler)
 
             current_handler = CommandHandler('nu', self.get_current)
             u.dispatcher.add_handler(current_handler)
@@ -61,36 +54,23 @@ class Telegram_EnergiePrijzen(Telegram_Functions):
             lowprice_handler = CommandHandler('laag', self.get_lowprices)
             u.dispatcher.add_handler(lowprice_handler)
 
-            donate_handler = CommandHandler('doneer', self.donate)
+            donate_handler = CommandHandler(['d','doneer'], self.donate)
             u.dispatcher.add_handler(donate_handler)
 
-            system_handler = CommandHandler('system', self.systeminfo)
+            system_handler = CommandHandler(['s', 'system', 'systeem'], self.systeminfo)
             u.dispatcher.add_handler(system_handler)
 
-            # admin handlers
-            filldb_handler = CommandHandler('fill', self.fill_db)
-            u.dispatcher.add_handler(filldb_handler)
+             # Help, Unknown handlers & enz
+            commando_handler = CommandHandler(['c','commandos','commands'], self.commandos)
+            u.dispatcher.add_handler(commando_handler)
 
-            listids_handler = CommandHandler('listids', self.list_ids)
-            u.dispatcher.add_handler(listids_handler)
+            helpme_handler = CommandHandler(['h','help','hulp'], self.help_me)
+            u.dispatcher.add_handler(helpme_handler)
 
-            onderhoud_handler = CommandHandler('onderhoud', self.onderhoud)
-            u.dispatcher.add_handler(onderhoud_handler)
-
-            tomorrowminus_handler = CommandHandler('tomorrowminus', self.tomorrowminus)
-            u.dispatcher.add_handler(tomorrowminus_handler)
-
-            nexthourminus_handler = CommandHandler('nexthourminus', self.nexthourminus)
-            u.dispatcher.add_handler(nexthourminus_handler)
-
-
-
-            # Unknown handlers
-
-            unknown_handler = MessageHandler(Filters.command, self.dontunderstand)
+            unknown_handler = MessageHandler(Filters.command, self.help_me)
             u.dispatcher.add_handler(unknown_handler)
 
-            blahblah_handler = MessageHandler(Filters.text, self.blahblah)
+            blahblah_handler = MessageHandler(Filters.text, self.help_me)
             u.dispatcher.add_handler(blahblah_handler)
 
             # Start the Bot

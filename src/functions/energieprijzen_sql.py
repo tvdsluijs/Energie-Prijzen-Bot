@@ -1,11 +1,10 @@
 import os
-import re
+# import re
 import sys
 import sqlite3
 from time import time;
-from dateutil import parser, tz
+# from dateutil import parser, tz
 from sqlite3 import Error
-from decimal import Decimal
 
 import logging
 
@@ -29,7 +28,9 @@ class EnergiePrijzen_SQL():
 
             self.conn = sqlite3.connect(self.dbname)
             self.conn.row_factory = sqlite3.Row
-            # self.conn.set_trace_callback(print)
+            if PY_ENV != 'prod':
+                self.conn.set_trace_callback(print)
+
             if not self.conn:
                 raise Exception("No connection!!")
         except Error as e:
@@ -55,9 +56,12 @@ class EnergiePrijzen_SQL():
             sql = ""
             if table == 'user':
                 sql = """ CREATE TABLE IF NOT EXISTS users (
-                                            user_id INTEGER PRIMARY KEY,
-                                            datetime INTEGER,
-                                            ochtend  INTEGER
+                            user_id           INTEGER     PRIMARY KEY,
+                            datetime          INTEGER,
+                            ochtend           INTEGER,
+                            opslag            DOUBLE,
+                            melding_lager_dan DECIMAL DEFAULT (0.001),
+                            melding_hoger_dan DECIMAL
                                         ); """
 
             if table == "energy":
@@ -191,7 +195,6 @@ AND kind = ?
 Group by fromdate );"""
 
             output_obj = cur.execute(SQL, (date, kind, date, kind, ))
-
             results = output_obj.fetchall()
 
             row_as_dict = []
@@ -227,12 +230,55 @@ Group by fromdate );"""
             log.error(e)
             return -1
 
-    def get_user(self, user_id:int = None)->bool:
+    def get_ochtend_users(self, hour:int = None)->list:
+        try:
+            if hour is None:
+                return True
+
+            self.connection()
+            cur = self.conn.cursor()
+            cur.execute("SELECT user_id FROM users WHERE ochtend = ?", (hour, ))
+            return [list[0] for list in cur.fetchall()]
+        except sqlite3.IntegrityError as err:
+            return 0
+        except Error as e:
+            log.error(e)
+            return -1
+
+    def update_ochtend(self, user_id:int = None, tijd:str = None)->bool:
+        try:
+            if user_id is None:
+                return False
+
+            if tijd is None:
+                tijd = None
+
+            if not self.get_user(user_id=user_id):
+                self.add_user(user_id=user_id)
+
+            self.connection()
+            sql = """Update users
+set ochtend = ?
+WHERE user_id = ?"""
+            cur = self.conn.cursor()
+            cur.execute(sql,(tijd, user_id,))
+            self.conn.commit()
+            return True
+        except sqlite3.IntegrityError as err:
+            log.error(err)
+            return False
+        except Error as e:
+            log.error(e)
+            return False
+
+    def get_user(self, user_id:int = None)->dict:
+        """Returns sqlite dict with:"""
+        """user_id, datetime, kaal_opslag_allin,ochtend, opslag,"""
+        """melding_lager_dan, melding_hoger_dan """
         try:
             self.connection()
             cur = self.conn.cursor()
-            cur.execute(f"SELECT user_id FROM users WHERE user_id=?", (int(user_id),))
-            return cur.fetchone()
+            return cur.execute(f"SELECT * FROM users WHERE user_id=?", (int(user_id),)).fetchone()
         except Error as e:
             log.error(e)
             return False
@@ -259,64 +305,6 @@ Group by fromdate );"""
         except Error as e:
             log.error(e)
             return False
-
-    def change_table(self)->bool:
-        try:
-            self.connection()
-
-            addColumn = "ALTER TABLE users ADD COLUMN ochtend INTEGER"
-            cur = self.conn.cursor()
-            cur.execute(addColumn)
-
-            addColumn = "ALTER TABLE users ADD COLUMN opslag DOUBLE"
-            cur = self.conn.cursor()
-            cur.execute(addColumn)
-
-            addColumn = "ALTER TABLE users ADD COLUMN melding_lager_dan DECIMAL 0.0001"
-            cur = self.conn.cursor()
-            cur.execute(addColumn)
-
-            addColumn = "ALTER TABLE users ADD COLUMN melding_hoger_dan DECIMAL"
-            cur = self.conn.cursor()
-            cur.execute(addColumn)
-
-            sql = """
-PRAGMA foreign_keys = 0;
-
-CREATE TABLE sqlitestudio_temp_table AS SELECT *
-                                          FROM users;
-
-DROP TABLE users;
-
-CREATE TABLE users (
-    user_id           INT     PRIMARY KEY,
-    datetime          INT,
-    ochtend           INTEGER,
-    opslag            DOUBLE,
-    melding_lager_dan DECIMAL 0.001,
-    melding_hoger_dan DECIMAL
-);
-
-INSERT INTO users (
-                      user_id,
-                      datetime
-                  )
-                  SELECT user_id,
-                         datetime
-                    FROM sqlitestudio_temp_table;
-
-DROP TABLE sqlitestudio_temp_table;
-
-PRAGMA foreign_keys = 1;
-"""
-
-            self.create_table(create_table_sql=sql)
-            return True
-        except Exception as e:
-            log.error(e)
-            return False
-
-
 
 
 if __name__ == "__main__":

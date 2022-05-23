@@ -1,5 +1,15 @@
 # Energie Prijzen Bot
 
+Deze repo is geachtiveerd!
+
+Ga naar
+
+https://github.com/tvdsluijs/Energie-Prijzen-Bot-2.0
+
+Voor de nieuwste versie!
+
+====
+
 Een Telegram bot die de dagelijkse actuele inkoop energie prijzen verwerkt en toont.
 
 ## Omschrijving
@@ -90,8 +100,8 @@ info@itheo.tech
 
 ## Versiegeschiedenis
 
-03th mei, 2022 - versie: 1.2.0 
-- Koppeling gemaakt met entsoe voor 3 cijfers achter komma prijzen, meer system informatie en wat kleine layout aanpassingen. 
+03th mei, 2022 - versie: 1.2.0
+- Koppeling gemaakt met entsoe voor 3 cijfers achter komma prijzen, meer system informatie en wat kleine layout aanpassingen.
 
 Mei 1 2022 - versie: 1.1.1
 - Paar kleine verbeteringe, system time toegevoegd in /system, wanneer de bot je niet snapt krijg je de bruikbare commandos te zien, in git_push_tag verandert hij nu ook de readme met versie gegevens
@@ -159,4 +169,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 * [dynamische-energieprijzen.nl](https://www.dynamische-energieprijzen.nl/actuele-energieprijzen/)
 
 * [mdvmine](https://tweakers.net/gallery/78806/) heeft diverse verbeteringen en verbeteringen gestuurd.
+
+## Informatie (API's, koppelingen, sites enz)
+
+* [Day Ahead entsoe](https://transparency.entsoe.eu/load-domain/r2/totalLoadR2/show?name=&defaultValue=false&viewType=TABLE&areaType=BZN&atch=false&dateTime.dateTime=04.05.2022+00:00|CET|DAY&biddingZone.values=CTY|10YNL----------L!BZN|10YNL----------L&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2))
+* [Natural Gas prices](https://tradingeconomics.com/commodity/eu-natural-gas)
+* [dynamische-energieprijzen.nl](https://www.dynamische-energieprijzen.nl/actuele-energieprijzen/)
+* [Frank Marktprijzen-API](https://reversed.notion.site/Marktprijzen-API-89ce600a88ac4abe8c2ad89d3167a83e)
 

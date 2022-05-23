@@ -1,21 +1,33 @@
-
-import os
-import psutil
-from datetime import datetime
+import os,sys
 from time import time
+from datetime import datetime, timedelta
 
 from ast import Constant
 
 import telegram
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from telegram.utils.helpers import escape_markdown
 
-from telegram.ext import Updater, CommandHandler
 from functions.energieprijzen import EnergiePrijzen
 from functions.energieprijzen_sql import EnergiePrijzen_SQL
 
+from functions.admin import Admin
+from functions.commandos import Commandos
+from functions.help import Help
+
 import logging
+from functions.systeem import Systeem
+
+from functions.user import User
+
 
 PY_ENV = os.getenv('PY_ENV', 'dev')
 log = logging.getLogger(PY_ENV)
+
+# Stages
+FIRST, SECOND = range(2)
+# Callback data
+ONE, TWO, THREE, FOUR = range(4)
 
 class Telegram_Functions(object):
     ENERGIE = Constant(1)
@@ -31,55 +43,107 @@ class Telegram_Functions(object):
             self.entsoe_key = kwargs['entsoe_key']
 
             self.date_hours = []
-            self.dontunderstand_text = """Sorry, ik heb je niet begrepen."""
 
-            self.commando_hulp = """
+            H = Help()
+            self.help_tekst = H.help()
+            self.dontunderstand_text = H.dontunderstand()
+            self.foutmelding = H.foutmelding()
 
-Je hebt de volgende commando's tot je beschikking:
+            C = Commandos()
+            self.commands = C.commands()
+            self.admin_commands = C.all_commands()
 
-/voegmetoe → Je chat-id toevoegen
-/verwijderme → Je chat-id verwijderen
-/mijnid → Je chat-id tonen
-/nu → huidige prijzen dit uur
-/vandaag → prijzen van vandaag
-/morgen → prijzen van morgen (na 15.00)
-/laag → Laagste prijzen van vandaag
-/hoog → Hoogste prijzen van vandaag
-/system → Wat systeem gegevens"""
-
-            self.help_tekst = """
-Let op: alle bedragen zijn kale inkoopprijzen, dus zonder opslag, BTW en belastingen.
-
-Voor overzicht van alle /commandos.
-
-/voegmetoe voor automatische berichten:
-- de laagste prijzen van morgen;
-- bericht voordat laagste prijs begint;
-- informatie over prijzen onder 0.
-
-Vergeet niet te doneren
-/doneer
-
-Vragen?
-Mail naar info@itheo.tech
-"""
-
-            self.admin_help = """
-
-Dit is de Admin help
-/fill → vul de database met historische data
-/listids → lijst met aangemelde personen
-/onderhoud aan → stuur iedereen een onderhoud bericht
-/onderhoud uit → stuur iedereen een onderhoud bericht
-/system → wat systeem informatie
-/nexthourminus → is there a minus price next hour
-/tomorrowminus → tomorrows 0 and below prices
-            """
             super().__init__()
         except KeyError as e:
             log.error(e)
         except Exception as e:
             log.critical(e)
+
+    def admin(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            if int(update.message.chat_id) in self.admin_ids:
+                Adm = Admin(update=update, context=context, user_ids=self.get_users())
+                Adm.do_what(what=None)
+            else:
+                raise IndexError
+        except IndexError as e:
+            context.bot.send_message(chat_id=update.message.chat_id, text=self.dontunderstand_text)
+        except Exception as e:
+            log.error(e)
+
+    def prijs(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            print('hello')
+            pass
+        except Exception as e:
+            log.error(e)
+
+
+    def user(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            U = User(update=update, context=context, dbname=self.dbname)
+            U.do_what()
+        except Exception as e:
+            log.error(e)
+
+    def button_press(self, update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
+        try:
+            """Parses the CallbackQuery and updates the message text."""
+            query = update.callback_query
+            query.answer()
+            user_id = query['message']['chat']['id']
+            print(query.data)
+
+            match query.data:
+                case 'user_get_id':
+                    U = User(update=update, context=context, dbname=self.dbname)
+                    msg = U.get_id(send_msg=1, user_id=user_id)
+                case 'user_instellingen':
+                    U = User(update=update, context=context, dbname=self.dbname)
+                    msg = U.mijn_instellingen(send_msg=1, user_id=user_id)
+                case 'sure_delete':
+                    U = User(update=update, context=context, dbname=self.dbname)
+                    U.sure_delete(user_id=user_id)
+                    query.edit_message_text(text=" ")
+                case 'verwijder_user':
+                    U = User(update=update, context=context, dbname=self.dbname)
+                    msg = U.delete_me(send_msg=1, user_id=user_id)
+                case 'user_help':
+                    U = User(update=update, context=context, dbname=self.dbname)
+                    msg = U.help(send_msg=1, user_id=user_id)
+                case 'nee':
+                    msg = "Okay, dan niet\!"
+                case 'help_admin':
+                    A = Admin(update=update, context=context, dbname=self.dbname)
+                    msg = A.help(send_msg=1, user_id=user_id)
+                case 'onderhoud_aan':
+                    A = Admin(update=update, context=context, dbname=self.dbname)
+                    # msg = A.list_ids(send_msg=1, user_id=user_id)
+                case 'onderhoud_uit':
+                    A = Admin(update=update, context=context, dbname=self.dbname)
+                    # msg = A.list_ids(send_msg=1, user_id=user_id)
+                case 'onderhoud_aan':
+                    A = Admin(update=update, context=context, dbname=self.dbname)
+                    # msg = A.list_ids(send_msg=1, user_id=user_id)
+                case 'id_list':
+                    A = Admin(update=update, context=context, dbname=self.dbname)
+                    msg = A.list_ids(send_msg=1, user_id=user_id)
+                case 'vul_db':
+                    A = Admin(update=update, context=context, dbname=self.dbname)
+                    msg = A.fill_db(send_msg=1, user_id=user_id)
+                case 'admin_help':
+                    A = Admin(update=update, context=context, dbname=self.dbname)
+                    msg = A.help(send_msg=1, user_id=user_id)
+                    pass
+                case _:
+                    print(query.data)
+
+            if msg == "":
+                msg = self.dontunderstand_text
+                # msg = escape_markdown(msg, version=2)
+            query.edit_message_text(text=msg, parse_mode=ParseMode.MARKDOWN_V2)
+        except Exception as e:
+            log.error(e)
 
     def start_me_up(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
@@ -89,22 +153,16 @@ Dit is de Admin help
             if first_name is None or first_name == "":
                 name = username
             else:
-                name = username
+                name = first_name
 
-            msg = f"""Beste {name},
-welkom bij de Energie prijzen bot
+            msg = f"""Hoi {name}, welkom bij de Energie prijzen bot
 {self.help_tekst}
 """
-
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='Markdown')
+            msg = escape_markdown(msg, version=2)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
-    def commandos(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            context.bot.send_message(chat_id=update.message.chat_id, text=self.commando_hulp, parse_mode='Markdown')
-        except Exception as e:
-            log.error(e)
     def help_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             first_name = update.message.chat.first_name
@@ -113,17 +171,26 @@ welkom bij de Energie prijzen bot
             if first_name is None or first_name == "":
                 name = username
             else:
-                name = username
+                name = first_name
 
             msg = f"""Hoi {name},
 ik ben hier om je te helpen
 {self.help_tekst}
 """
-            # msg = telegram.utils.helpers.escape_markdown(msg, 2)
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='Markdown')
+            msg = escape_markdown(msg, version=2)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
+    def commandos(self, update: telegram.Update, context: telegram.ext.CallbackContext):
+        try:
+            msg = escape_markdown(self.commands, version=2)
+            if int(update.message.chat_id) in self.admin_ids:
+                msg = escape_markdown(self.admin_commands, version=2)
+
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
+        except Exception as e:
+            log.error(e)
 
     def donate(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
@@ -140,7 +207,7 @@ ik ben hier om je te helpen
             now = datetime.now()
             date_hour = now.strftime("%Y-%m-%d %H:00")
 
-            # Check if current hour in list
+            # Check if current hour in , if so do not run!
             if date_hour in self.date_hours:
                 return
 
@@ -150,9 +217,9 @@ ik ben hier om je te helpen
 
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
+            cur_hour = int(now.strftime("%H"))
 
-            #stroom = 1, gas 2 2
-            # for sg in [1,2]:
+            #stroom = 1, gas = 2
             # Gas ophalen bij ernergyzero
             if (data := EP.get_energyzero_data(kind=2)):
                 EP.save_data(data=data, kind=2)
@@ -164,20 +231,16 @@ ik ben hier om je te helpen
             elif (data := EP.get_energyzero_data(kind=1)):
                 EP.save_data(data=data, kind=1)
 
-            cur_hour = int(now.strftime("%H"))
-            if cur_hour == 8:
-                # om 8 uur melding voor
-                "Vandaag is de inkoopprijs van stroom per kWh het laagst tussen {} en {} (€ {}) en het hoogst tussen {} en {} (€ {})."
-                pass
-
+            ochtend_ids = EP.get_ochtend_users(cur_hour)
+            if ochtend_ids:
+                if (msg := EP.ochtend_message()):
+                    for id in ochtend_ids:
+                        if id == 0:
+                            continue
+                        context.bot.send_message(chat_id=id, text=msg)
 
             if cur_hour not in [23,0,1,2,3,4,5,6]:
                 ids = self.get_users()
-                # if (msg := EP.get_next_hour_lowest_price()):
-                #     for id in ids:
-                #         if id == 0:
-                #             continue
-                #         context.bot.send_message(chat_id=id, text=msg)
 
                 if (msg := EP.get_next_hour_minus_price()):
                     for id in ids:
@@ -190,8 +253,8 @@ ik ben hier om je te helpen
                         for id in ids:
                             if id == 0:
                                 continue
-                            context.bot.send_message(chat_id=id, text=msg, parse_mode='MarkdownV2')
-            EP = None
+                            context.bot.send_message(chat_id=id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
+            del EP
         except Exception as e:
             log.error(e)
 
@@ -201,89 +264,54 @@ ik ben hier om je te helpen
             ids = []
             ids = esql.get_users()
             ids.append(0)
-            esql = None
+            del esql
             return ids
         except Exception as e:
             log.error(e)
 
-    def blahblah(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            msg = self.dontunderstand_text + self.commando_hulp
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except Exception as e:
-            log.error(e)
-
-    def dontunderstand(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        # https://blog.finxter.com/python-telegram-bot/
-        try:
-            msg = self.dontunderstand_text + self.commando_hulp
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except Exception as e:
-            log.error(e)
-
-    def add_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            esql = EnergiePrijzen_SQL(dbname=self.dbname)
-            mss_id = esql.add_user(user_id=update.message.chat_id)
-            esql = None
-            match mss_id:
-                case 0:
-                    msg = f"Jouw user chat id ({update.message.chat_id}) staat al in het systeem"
-                case 1:
-                    msg = f"Ik heb je toegevoegd met user chat id: {update.message.chat_id}! Vanaf nu ontvang je de energie prijzen"
-                case -1:
-                    msg = f"Ai... we hebben een probleem om je toe te voegen met user chat id ({update.message.chat_id}), probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft"
-
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except Exception as e:
-            log.error(e)
 
     def ochtend(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
-            if context.args[0] == 'aan':
-                # toevoegen ochtend aan bij id
-                # update.message.chat_id
-                pass
-            elif context.args[0] == 'uit':
-                # verwijderen ochtend aan bij id
-                # update.message.chat_id
-                pass
-        except Exception as e:
-            log.error(e)
-
-    def remove_me(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
+            msg = ""
             esql = EnergiePrijzen_SQL(dbname=self.dbname)
-            mss_id = esql.remove_user(user_id=update.message.chat_id)
-            esql = None
-            msg = "Oeps... er ging iets fout"
 
-            match mss_id:
-                case 0:
-                    msg = f"Jouw user chat id ({update.message.chat_id}) is niet gevonden, dus verwijderen kan niet"
-                case 1:
-                    msg = f"Jouw user chat id ({update.message.chat_id}) is verwijdert! Je ontvangt nu geen automatische energie updates"
-                case -1:
-                    msg = f"Ai... we hebben een probleem om jouw user chat id ({update.message.chat_id}) te verwijderen, probeer het nog een keer of stuur een mail naar info@itheo.tech als dit probleem blijft"
+            if context.args[0] == 'aan':
+                tijd = context.args[1]
+                if esql.update_ochtend(user_id=update.message.chat_id, tijd=tijd):
+                    msg = f"Ochtend melding staat aan om {tijd} uur"
+                else:
+                    msg = self.foutmelding
 
+            elif context.args[0] == 'uit':
+                if esql.update_ochtend(user_id=update.message.chat_id, tijd=None):
+                    msg = f"Ochtend melding staat uit"
+                else:
+                    msg = self.foutmelding
+            if msg == "":
+                msg = """Sorry, dit commando moet uitgevoerd worden als volgt:
+
+/ochtend aan 9
+Hiermee zet je de ochtend melding aan om 9 uur
+
+Je kan de ochtend melding aanpassen door bijvoorbeeld:
+/ochtend aan 10
+
+/ochtend uit
+Hiermee zet je de ochtend melding uit
+"""
+            del esql
             context.bot.send_message(chat_id=update.message.chat_id, text=msg)
         except Exception as e:
             log.error(e)
 
-    def get_id(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            msg = f"Jouw user chat id is {update.message.chat_id}!"
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except Exception as e:
-            log.error(e)
 
     def get_today(self, update: telegram.Update, context: telegram.ext.CallbackContext):
         try:
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             msg = EP.get_todays_prices(date=EP.today)
-            EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            del EP
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
@@ -295,7 +323,8 @@ ik ben hier om je te helpen
                 msg = """Prijzen van morgen zijn pas na 15u beschikbaar"""
             else:
                 msg = EP.get_todays_prices(date=EP.tomorrow)
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            del EP
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
@@ -304,8 +333,8 @@ ik ben hier om je te helpen
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             msg = EP.get_cur_price()
-            EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            del EP
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
@@ -314,8 +343,8 @@ ik ben hier om je te helpen
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             msg = EP.get_todays_highest_price()
-            EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            del EP
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
@@ -324,8 +353,8 @@ ik ben hier om je te helpen
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             msg = EP.get_todays_lowest_price()
-            EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            del EP
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
@@ -336,8 +365,8 @@ ik ben hier om je te helpen
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             msg = EP.get_tomorrows_minus_price()
-            EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            del EP
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
@@ -346,8 +375,8 @@ ik ben hier om je te helpen
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             msg = EP.get_next_hour_lowest_price()
-            EP = None
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            del EP
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             log.error(e)
 
@@ -360,145 +389,14 @@ ik ben hier om je te helpen
             EP = EnergiePrijzen(dbname=self.dbname)
             EP.set_dates()
             dt = EP.current_date_time
-            EP = None
-            msg = f"""
+            del EP
+            users = len(self.get_users())
+            S = Systeem()
 
-Systeem informatie:
-```
-System time : {dt}
-Bot version : {version}
-Database :    {self.fileSize(self.dbname)}
-Uptime :      {self.secondsToText(seconds)}
-Users :       {len(self.get_users())}
-CPU load :    {self.get_cpu_usage_pct()}%
-RAM usage:    {int(self.get_ram_usage() / 1024 / 1024)} MB
-```
-"""
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode='MarkdownV2')
+            msg = S.systeminfo_msg(dt=dt, version=version, users=users, seconds=seconds, dbname=self.dbname)
+            del S
 
-        except Exception as e:
-            log.error(e)
+            context.bot.send_message(chat_id=update.message.chat_id, text=msg, parse_mode=ParseMode.MARKDOWN_V2)
 
-    def list_ids(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            msg = self.dontunderstand_text + self.commando_hulp
-            if int(update.message.chat_id) in self.admin_ids:
-                ids = self.get_users()
-                msg = f"Hier is een lijst met ID's \n {str(ids)}"
-
-            context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except Exception as e:
-            log.error(e)
-
-    def onderhoud(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            if int(update.message.chat_id) in self.admin_ids:
-                if context.args[0] == 'aan':
-                    msg = "We gaan even in ouderhoud voor updates! We zijn zo weer terug!"
-                elif context.args[0] == 'uit':
-                    msg = "Het onderhoud is gedaan. We zijn weer terug!"
-                else:
-                    msg = """
-Ik begrijp je niet, het commando is
-/onderhoud aan
-/onderhoud uit
-                    """
-                    context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-                    return
-                for id in self.get_users():
-                    if id == 0:
-                        continue
-                    context.bot.send_message(chat_id=id, text=msg)
-
-            else:
-                msg = self.dontunderstand_text + self.commando_hulp
-                context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except Exception as e:
-            log.error(e)
-
-    def fill_db(self, update: telegram.Update, context: telegram.ext.CallbackContext):
-        try:
-            if int(update.message.chat_id) in self.admin_ids:
-                EP = EnergiePrijzen(dbname=self.dbname)
-                EP.set_dates()
-
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"This is gonna take a while!!\n")
-
-                #stroom vanaf 2017
-                EP.get_history(startdate="2017-01-01", enddate="2017-01-02", kind=1)
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Energy import ready!!\n")
-                #gas vanaf 2018
-                EP.get_history(startdate="2018-01-01", enddate="2018-01-02", kind=2)
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Gas import ready!!\n")
-                EP = None
-                context.bot.send_message(chat_id=update.message.chat_id, text=f"Databases filled!!\n")
-            else:
-                msg = self.dontunderstand_text + self.commando_hulp
-                context.bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except Exception as e:
-            log.error(e)
-
-# some other functions
-    @staticmethod
-    def unitConvertor(sizeInBytes):
-        try:
-            #Cinverts the file unit
-            if sizeInBytes < 1024*1024:
-                size = round(sizeInBytes/1024)
-                return f"{size} KB"
-            elif sizeInBytes < 1024*1024*1024:
-                size = round(sizeInBytes/(1024*1024))
-                return f"{size} MB"
-            elif sizeInBytes >= 1024*1024*1024:
-                size = round(sizeInBytes/(1024*1024*1024))
-                return f"{size} GB"
-            else:
-                return f"{sizeInBytes} Bytes"
-        except Exception as e:
-            log.error(e)
-
-    def fileSize(self, filePath):
-        try:
-            size = os.path.getsize(filePath)
-            return self.unitConvertor(size)
-        except Exception as e:
-            log.error(e)
-
-    @staticmethod
-    def get_ram_usage():
-        return int(psutil.virtual_memory().total - psutil.virtual_memory().available)
-
-    @staticmethod
-    def get_cpu_usage_pct():
-        return psutil.cpu_percent(interval=0.5)
-
-    @staticmethod
-    def secondsToText(unit, granularity = 2):
-        try:
-            ratios = {
-                'decennia' : 311040000, # 60 * 60 * 24 * 30 * 12 * 10
-                'jaar'   : 31104000,  # 60 * 60 * 24 * 30 * 12
-                'maanden'  : 2592000,   # 60 * 60 * 24 * 30
-                'dagen'    : 86400,     # 60 * 60 * 24
-                'uur'   : 3600,      # 60 * 60
-                'minuten' : 60,        # 60
-                'seconden' : 1          # 1
-            }
-
-            texts = []
-            for ratio in ratios:
-                result, unit = divmod(unit, ratios[ratio])
-                if result:
-                    if result == 1:
-                        ratio = ratio.rstrip('s')
-                    texts.append(f'{result} {ratio}')
-            texts = texts[:granularity]
-            if not texts:
-                return f'0 {list(ratios)[-1]}'
-            text = ', '.join(texts)
-            if len(texts) > 1:
-                index = text.rfind(',')
-                text = f'{text[:index]}, {text[index + 1:]}'
-            return text
         except Exception as e:
             log.error(e)

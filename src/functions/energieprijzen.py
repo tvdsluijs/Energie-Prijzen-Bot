@@ -267,6 +267,45 @@ Om {d['fromtime']} gaat de ⚡ prijs naar\n"""
             log.error(e)
             return self.foutmelding
 
+    def get_ochtend_users(self, hour:int = None)->list:
+        try:
+            esql = EnergiePrijzen_SQL(dbname=self.dbname)
+            users = esql.get_ochtend_users(hour=hour)
+            users.append(0)
+            return users
+        except Exception as e:
+            log.error(e)
+        finally:
+            esql.close()
+
+    def ochtend_message(self, )->str:
+        try:
+            data = self.get_low_high()
+            fromtime_low = data['elect_low'][0]['fromtime']
+            low_price = data['elect_low'][0]['price']
+            fromtime_high = data['elect_high'][0]['fromtime']
+            high_price = data['elect_high'][0]['price']
+            int_hour_low = int(fromtime_low[:2]) + 1
+            int_hour_high = int(fromtime_high[:2]) + 1
+            totime_low = f"{int_hour_low:02d}:00"
+            totime_hight = f"{int_hour_high:02d}:00"
+            return f"Vandaag is de inkoopprijs van stroom per kWh het laagst tussen {fromtime_low} en {totime_low} (€ {low_price}) en het hoogst tussen {totime_hight} en {fromtime_high} (€ {high_price})."
+        except Exception as e:
+            log.error(e)
+            return False
+
+    def get_low_high(self, date:str = None)->dict:
+        try:
+            if date is None:
+                date = self.today
+            esql = EnergiePrijzen_SQL(dbname=self.dbname)
+            elect_low = esql.get_low_prices(date=date, kind='e')
+            elect_high = esql.get_high_prices(date=date, kind='e')
+            return {'elect_low': elect_low, 'elect_high': elect_high}
+        except Exception as e:
+            log.error(e)
+            return self.foutmelding
+
     def get_next_hour_lowest_price(self, date:str = None)->str:
         try:
             if date is None:
